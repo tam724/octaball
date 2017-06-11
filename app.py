@@ -1,3 +1,0 @@
-import server
-
-server.run();

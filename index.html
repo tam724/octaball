@@ -1,0 +1,25 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Octaball</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/game/octaball.js"></script>
+    <script src="/game/game.js"></script>
+    <script src="/game/ball.js"></script>
+    <script src="/game/player.js"></script>
+    <script src="/game/point.js"></script>
+    <script src="/game/shoot.js"></script>
+  </head>
+  <body>
+    <div id="div_status">This is the status</div>
+
+    <div id="div_playerinfo">
+      UserName:<input id="input_name"/>
+      Namespace:<input id="input_namespace"/>
+      Color:<input id="input_color">
+      <button id="button_send" onclick="connect();">Send</button>
+    </div>
+
+    <canvas id="myCanvas" width="900" height="600" style="border:1px solid #d3d3d3;" hidden/>
+  </body>
+</html>
