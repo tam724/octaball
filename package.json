@@ -3,7 +3,8 @@
   "version": "0.0.2",
   "description": "octaball",
   "dependencies": {
-    "express": "^4.15.2"
+    "express": "^4.15.3",
+    "socket.io": "^2.0.2"
   },
   "scripts": {
     "start": "node index.js"
