@@ -1,17 +1,6 @@
-class Game {
-  //first player is the active player
-  /** constructs a game */
-  constructor(player0, player1) {
-    this.player0 = player0;
-    this.player1 = player1;
-    this.activeplayer = player0;
-    this.points = this.initPoints();
-    this.shoots = this.initShoots();
-    this.ball = new Ball(this.points[6][4]);
-  }
-
+function Game (player0, player1) {
   /** initializes the points */
-  initPoints() {
+  this.initPoints = function() {
     var points = [];
     for (var i = 0; i < 13; i++) {
       points[i] = [];
@@ -23,7 +12,7 @@ class Game {
   }
 
   /** initializes the shoots */
-  initShoots() {
+  this.initShoots = function() {
     var shoots = []
     for (var i = 0; i < 13; i++) {
       for (var j = 0; j < 9; j++) {
@@ -65,7 +54,7 @@ class Game {
   }
 
   /** draws the game */
-  draw(context, width, height) {
+  this.draw = function(context, width, height) {
     context.clearRect(0, 0, width, height);
     for (var i = 0; i < this.points.length; i++) {
       for (var j = 0; j < this.points[i].length; j++) {
@@ -125,7 +114,7 @@ class Game {
     context.strokeStyle = '#000000'
   }
 
-  getOtherPlayer(player) {
+  this.getOtherPlayer = function(player) {
     if (player == this.player0) {
       return this.player1;
     } else if (player == this.player1) {
@@ -133,7 +122,7 @@ class Game {
     }
   }
 
-  isValidShoot(direction) {
+  this.isValidShoot = function(direction) {
     if (this.ball.point[direction] != null) {
       if (this.ball.point[direction].player == null) {
         return true;
@@ -146,7 +135,7 @@ class Game {
     return false;
   }
 
-  tryShoot(direction, player) {
+  this.tryShoot = function(direction, player) {
     if (this.activeplayer == player && this.isValidShoot(direction) && !this.winner) {
       // actual shooting
       this.ball.point[direction].player = player;
@@ -163,7 +152,7 @@ class Game {
     }
   }
 
-  testWinner() {
+  this.testWinner = function() {
     if (this.ball.point.x == 0) {
       this.winner = this.player1;
       return true;
@@ -177,11 +166,18 @@ class Game {
     return false;
   }
 
-  getActivePlayer() {
+  this.getActivePlayer = function() {
     return this.activeplayer;
   }
 
-  getWinner() {
+  this.getWinner = function() {
     return this.winner;
   }
+
+  this.player0 = player0;
+  this.player1 = player1;
+  this.activeplayer = player0;
+  this.points = this.initPoints();
+  this.shoots = this.initShoots();
+  this.ball = new Ball(this.points[6][4]);
 }

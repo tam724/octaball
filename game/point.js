@@ -1,20 +1,4 @@
-class Point {
-  /** constructs a point */
-  constructor(x, y) {
-    //position on field
-    this.x = x;
-    this.y = y;
-    //shoots in all directions, assigned by game.initShoots()
-    this.A = null;
-    this.B = null;
-    this.C = null;
-    this.D = null;
-    this.E = null;
-    this.F = null;
-    this.G = null;
-    this.H = null;
-  }
-
+function Point (x,y) {
   /** returns if the ball is on this point */
   hasBall(game) {
     return (game.ball.point == this);
@@ -70,4 +54,17 @@ class Point {
     var shootHeight = height/9;
     return [this.x * shootWidth + shootWidth/2, this.y * shootHeight + shootHeight/2];
   }
+
+  //position on field
+  this.x = x;
+  this.y = y;
+  //shoots in all directions, assigned by game.initShoots()
+  this.A = null;
+  this.B = null;
+  this.C = null;
+  this.D = null;
+  this.E = null;
+  this.F = null;
+  this.G = null;
+  this.H = null;
 }
