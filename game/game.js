@@ -76,6 +76,53 @@ class Game {
       this.shoots[i].draw(context, width, height);
     }
     this.ball.draw(context, width, height);
+    // draw border - upper part
+    context.beginPath();
+    var [locX,locY] = this.points[1][3].drawLocation(context,width,height);
+    context.moveTo(locX,locY);
+    [locX,locY] = this.points[1][0].drawLocation(context,width,height);
+    context.lineTo(locX,locY);
+    [locX,locY] = this.points[11][0].drawLocation(context,width,height);
+    context.lineTo(locX,locY);
+    [locX,locY] = this.points[11][3].drawLocation(context,width,height);
+    context.lineTo(locX,locY);
+
+    //lower part
+    [locX,locY] = this.points[1][5].drawLocation(context,width,height);
+    context.moveTo(locX,locY);
+    [locX,locY] = this.points[1][8].drawLocation(context,width,height);
+    context.lineTo(locX,locY);
+    [locX,locY] = this.points[11][8].drawLocation(context,width,height);
+    context.lineTo(locX,locY);
+    [locX,locY] = this.points[11][5].drawLocation(context,width,height);
+    context.lineTo(locX,locY);
+    context.strokeStyle = '#000000'
+    context.stroke();
+
+    context.beginPath();
+    [locX,locY] = this.points[1][3].drawLocation(context,width,height);
+    context.moveTo(locX,locY);
+    [locX,locY] = this.points[0][3].drawLocation(context,width,height);
+    context.lineTo(locX,locY);
+    [locX,locY] = this.points[0][5].drawLocation(context,width,height);
+    context.lineTo(locX,locY);
+    [locX,locY] = this.points[1][5].drawLocation(context,width,height);
+    context.lineTo(locX,locY);
+    context.strokeStyle =this.player0.color;
+    context.stroke();
+
+    context.beginPath();
+    [locX,locY] = this.points[11][3].drawLocation(context,width,height);
+    context.moveTo(locX,locY);
+    [locX,locY] = this.points[12][3].drawLocation(context,width,height);
+    context.lineTo(locX,locY);
+    [locX,locY] = this.points[12][5].drawLocation(context,width,height);
+    context.lineTo(locX,locY);
+    [locX,locY] = this.points[11][5].drawLocation(context,width,height);
+    context.lineTo(locX,locY);
+    context.strokeStyle =this.player1.color;
+    context.stroke();
+    context.strokeStyle = '#000000'
   }
 
   getOtherPlayer(player) {
