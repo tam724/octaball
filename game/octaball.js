@@ -35,13 +35,37 @@ function endGame(){
 }
 
 function startGame(ply){
-  player0 = new Player(ply.player0.name,'#'+ply.player0.color);
-  player1 = new Player(ply.player1.name,'#'+ply.player1.color);
+  var player0 = new Player(ply.player0.name,'#'+ply.player0.color);
+  var player1 = new Player(ply.player1.name,'#'+ply.player1.color);
   document.getElementById('myCanvas').hidden = false;
   game = new Game(player0, player1);
-  game.draw();
+  var c = document.getElementById("myCanvas");
+  var ctx = c.getContext("2d");
+  var width = c.width;
+  var height = c.height;
+  game.draw(ctx, width, height);
   document.getElementById('div_status').innerHTML = 'Game started! Its ' + game.getActivePlayer().name + ' turn \n';
-  document.addEventListener('keypress', onKeyPress,false);
+  document.addEventListener('keypress', onKeyPress, false);
+}
+
+function startOfflineGame(ply){
+  var username = document.getElementById('input_name');
+  var namespace = document.getElementById('input_namespace');
+  var color = document.getElementById('input_color');
+  username.disabled = true;
+  namespace.disabled = true;
+  color.disabled = true;
+  var player0 = new Player('player0','#FF0000');
+  var player1 = new Player('player1','#00FF0');
+  document.getElementById('myCanvas').hidden = false;
+  game = new Game(player0, player1);
+  var c = document.getElementById("myCanvas");
+  var ctx = c.getContext("2d");
+  var width = c.width;
+  var height = c.height;
+  game.draw(ctx, width, height);
+  document.getElementById('div_status').innerHTML = 'Game started! Its ' + game.getActivePlayer().name + ' turn \n';
+  document.addEventListener('keypress', onKeyPressOffline, false);
 }
 
 var keyDict = {}; keyDict.q = 'G'; keyDict.w = 'F'; keyDict.e = 'E';
@@ -51,10 +75,20 @@ function onKeyPress(event){
   socket.emit('try shoot', {name: myplayername, direction: keyDict[event.key]});
 }
 
+function onKeyPressOffline(event){
+  var direction = keyDict[event.key];
+  var name = game.getActivePlayer().name;
+  shoot({name: name, direction: direction});
+}
+
 function shoot(shoot){
   if(shoot.name == game.getActivePlayer().name){
     game.tryShoot(shoot.direction, game.getActivePlayer());
-    game.draw();
+    var c = document.getElementById("myCanvas");
+    var ctx = c.getContext("2d");
+    var width = c.width;
+    var height = c.height;
+    game.draw(ctx, width, height);
     updateStatusDiv();
   }
   else{

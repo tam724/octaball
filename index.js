@@ -2,6 +2,7 @@ var app = require('express')();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 
+/** http server */
 var files = [{name: '/', path: '/index.html'},
             {name: '/game/octaball.js', path: '/game/octaball.js'},
             {name: '/game/game.js', path: '/game/game.js'},
@@ -15,6 +16,14 @@ for(var i = 0; i < files.length; i++){
     res.sendFile(__dirname + path);
   }}(files[i].path));
 }
+
+http.listen(8080, function(){
+  console.log('listening on *:8080');
+});
+
+/** end http server */
+/** game handling */
+var games = {};
 
 var game1 = {started: false, player0: {connected: false, initialized: false}, player1: {connected: false, initialized: false}};
 game1.io = io.of('/game1');
@@ -64,8 +73,4 @@ io.on('connection', function(socket){
   socket.on('disconnect', function(){
     console.log('user disconnected');
   });
-});
-
-http.listen(8080, function(){
-  console.log('listening on *:8080');
 });
