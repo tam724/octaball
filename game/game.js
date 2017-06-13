@@ -1,17 +1,12 @@
-class Game {
-  //first player is the active player
-  /** constructs a game */
-  constructor(player0, player1) {
-    this.player0 = player0;
-    this.player1 = player1;
-    this.activeplayer = player0;
-    this.points = this.initPoints();
-    this.shoots = this.initShoots();
-    this.ball = new Ball(this.points[6][4]);
-  }
+var Point = require('./point');
+var Shoot = require('./shoot');
+var Ball = require('./ball');
+var Player = require('./player');
 
+
+function Game(player0, player1) {
   /** initializes the points */
-  initPoints() {
+  this.initPoints = function() {
     var points = [];
     for (var i = 0; i < 13; i++) {
       points[i] = [];
@@ -23,7 +18,7 @@ class Game {
   }
 
   /** initializes the shoots */
-  initShoots() {
+  this.initShoots = function() {
     var shoots = []
     for (var i = 0; i < 13; i++) {
       for (var j = 0; j < 9; j++) {
@@ -64,68 +59,7 @@ class Game {
     return shoots;
   }
 
-  /** draws the game */
-  draw(context, width, height) {
-    context.clearRect(0, 0, width, height);
-    for (var i = 0; i < this.points.length; i++) {
-      for (var j = 0; j < this.points[i].length; j++) {
-        this.points[i][j].draw(context, width, height);
-      }
-    }
-    for (var i = 0; i < this.shoots.length; i++) {
-      this.shoots[i].draw(context, width, height);
-    }
-    this.ball.draw(context, width, height);
-    // draw border - upper part
-    context.beginPath();
-    var [locX,locY] = this.points[1][3].drawLocation(context,width,height);
-    context.moveTo(locX,locY);
-    [locX,locY] = this.points[1][0].drawLocation(context,width,height);
-    context.lineTo(locX,locY);
-    [locX,locY] = this.points[11][0].drawLocation(context,width,height);
-    context.lineTo(locX,locY);
-    [locX,locY] = this.points[11][3].drawLocation(context,width,height);
-    context.lineTo(locX,locY);
-
-    //lower part
-    [locX,locY] = this.points[1][5].drawLocation(context,width,height);
-    context.moveTo(locX,locY);
-    [locX,locY] = this.points[1][8].drawLocation(context,width,height);
-    context.lineTo(locX,locY);
-    [locX,locY] = this.points[11][8].drawLocation(context,width,height);
-    context.lineTo(locX,locY);
-    [locX,locY] = this.points[11][5].drawLocation(context,width,height);
-    context.lineTo(locX,locY);
-    context.strokeStyle = '#000000'
-    context.stroke();
-
-    context.beginPath();
-    [locX,locY] = this.points[1][3].drawLocation(context,width,height);
-    context.moveTo(locX,locY);
-    [locX,locY] = this.points[0][3].drawLocation(context,width,height);
-    context.lineTo(locX,locY);
-    [locX,locY] = this.points[0][5].drawLocation(context,width,height);
-    context.lineTo(locX,locY);
-    [locX,locY] = this.points[1][5].drawLocation(context,width,height);
-    context.lineTo(locX,locY);
-    context.strokeStyle =this.player0.color;
-    context.stroke();
-
-    context.beginPath();
-    [locX,locY] = this.points[11][3].drawLocation(context,width,height);
-    context.moveTo(locX,locY);
-    [locX,locY] = this.points[12][3].drawLocation(context,width,height);
-    context.lineTo(locX,locY);
-    [locX,locY] = this.points[12][5].drawLocation(context,width,height);
-    context.lineTo(locX,locY);
-    [locX,locY] = this.points[11][5].drawLocation(context,width,height);
-    context.lineTo(locX,locY);
-    context.strokeStyle =this.player1.color;
-    context.stroke();
-    context.strokeStyle = '#000000'
-  }
-
-  getOtherPlayer(player) {
+  this.getOtherPlayer = function(player) {
     if (player == this.player0) {
       return this.player1;
     } else if (player == this.player1) {
@@ -133,21 +67,21 @@ class Game {
     }
   }
 
-  isValidShoot(direction) {
+  this.isValidShoot = function(direction) {
     if (this.ball.point[direction] != null) {
       if (this.ball.point[direction].player == null) {
-        return true;
+        return 'OK';
       } else {
-        window.alert('Shoot already occupied by: ' + this.ball.point[direction].player.name);
+        return 'Shoot already occupied by: ' + this.ball.point[direction].player.name;
       }
     } else {
-      window.alert('Shoot over border');
+      return 'Shoot over border';
     }
-    return false;
   }
 
-  tryShoot(direction, player) {
-    if (this.activeplayer == player && this.isValidShoot(direction) && !this.winner) {
+  this.tryShoot = function(direction, player) {
+    var shootResult = this.isValidShoot(direction);
+    if (this.activeplayer == player && shootResult == 'OK' && !this.winner) {
       // actual shooting
       this.ball.point[direction].player = player;
       this.ball.point = this.ball.point[direction].getOtherPoint(this.ball.point);
@@ -157,13 +91,13 @@ class Game {
         //player change if the active player is the first at a specific point (occupied == 1) and it is not the border (valid == 8)
         this.activeplayer = this.getOtherPlayer(this.activeplayer);
       }
-      return true;
+      return 'OK';
     } else {
-      return false;
+      return shootResult;
     }
   }
 
-  testWinner() {
+  this.testWinner = function() {
     if (this.ball.point.x == 0) {
       this.winner = this.player1;
       return true;
@@ -177,11 +111,47 @@ class Game {
     return false;
   }
 
-  getActivePlayer() {
+  this.getActivePlayer = function() {
     return this.activeplayer;
   }
 
-  getWinner() {
+  this.getWinner = function() {
     return this.winner;
   }
+
+  this.getForSending = function() {
+    var pkg = {
+      shoots: [],
+      ball: {
+        x: this.ball.point.x,
+        y: this.ball.point.y,
+        p: this.activeplayer.color
+      }
+    };
+    for (var i = 0; i < this.shoots.length; i++) {
+      if (this.shoots[i].player) {
+        pkg.shoots.push({
+          a: {
+            x: this.shoots[i].a.x,
+            y: this.shoots[i].a.y
+          },
+          b: {
+            x: this.shoots[i].b.x,
+            y: this.shoots[i].b.y
+          },
+          p: this.shoots[i].player.color
+        });
+      }
+    }
+    return pkg;
+  }
+
+  this.player0 = player0;
+  this.player1 = player1;
+  this.activeplayer = player0;
+  this.points = this.initPoints();
+  this.shoots = this.initShoots();
+  this.ball = new Ball(this.points[6][4]);
 }
+
+module.exports = Game;

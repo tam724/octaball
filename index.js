@@ -1,6 +1,9 @@
 var app = require('express')();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
+var Game = require('./game/game');
+var Player = require('./game/player');
+
 
 /** http server */
 var files = [{
@@ -8,8 +11,12 @@ var files = [{
     path: '/index.html'
   },
   {
-    name: '/game/octaball.js',
-    path: '/game/octaball.js'
+    name: '/style.css',
+    path: '/style.css'
+  },
+  {
+    name: '/octaball.js',
+    path: '/octaball.js'
   },
   {
     name: '/game/game.js',
@@ -48,6 +55,13 @@ http.listen(8080, function() {
 /** end http server */
 /** game handling */
 var games = {};
+var emits = {
+  octaballError: 'octaball error',
+  endGame: 'end game',
+  startGame: 'start game',
+  gameUpdate: 'gameUpdate',
+  shootResult: 'shootResult'
+};
 
 function makeRandomGameString(length) {
   do {
@@ -61,64 +75,84 @@ function makeRandomGameString(length) {
   return gameString;
 }
 
-function createConnects(gameString){
-  games[gameString].io = io.of('/'+gameString);
+function createNewGame() {
+  var gameString = makeRandomGameString(5);
+  console.log('Creating new game.. ' + gameString);
+  games[gameString] = {
+    player0: new Player(),
+    player1: new Player(),
+    game: null
+  };
+  games[gameString].io = io.of('/' + gameString);
   games[gameString].io.on('connection', function(socket) {
-    console.log(gameString + ': someone connected');
+    //a new player wants to connect and initialize
     var player = null;
     if (!games[gameString].player0.connected) {
+      //if there is no player0 connected, connect this player to player0
       player = games[gameString].player0;
       player.connected = true;
     } else if (!games[gameString].player1.connected) {
+      //if there is no player1 connected, connect this player to player1
       player = games[gameString].player1;
       player.connected = true;
     } else {
-      socket.emit('octaball error', 'game is already full');
+      //else there are already two player in this game
+      socket.emit(emits.octaballError, 'game is already full');
     }
+
     socket.on('disconnect', function() {
       if (player) {
-        player.connected = false;
-        player.initialized = false;
         console.log(gameString + ':' + player.name + ' disconnected, ending the game');
-        games[gameString].io.emit('end game');
+        games[gameString].io.emit(emits.endGame);
+        player.connected = false;
       }
-      console.log(gameString + ': someone disconnected');
-      if(games[gameString].player0.connected == false && games[gameString].player1.connected == false){
-        games[gameString] = null;
+      if (games[gameString].player0.connected == false && games[gameString].player1.connected == false) {
         console.log(gameString + ': deleting');
+        delete games[gameString];
+        delete io.nsps['/' + gameString];
       }
     });
+
     socket.on('initialize', function(ply) {
       if (player) {
-        player.name = ply.name;
-        player.color = ply.color;
-        player.initialized = true;
+        player.initialize(ply.name, ply.color);
         console.log(gameString + ':' + player.name + ' initialized with color ' + player.color);
+
         if (games[gameString].player0.initialized && games[gameString].player1.initialized) {
+          //if there are two initialized players, start the game
           console.log(gameString + ': starting the game');
-          games[gameString].io.emit('start game', {
+          games[gameString].game = new Game(games[gameString].player0, games[gameString].player1);
+          games[gameString].io.emit(emits.startGame, {
             player0: games[gameString].player0,
             player1: games[gameString].player1
           });
+          games[gameString].io.emit(emits.gameUpdate, games[gameString].game.getForSending());
         }
       }
     });
-    socket.on('try shoot', function(shoot) {
-      console.log(gameString + ': ' + shoot.name + ' trying to shoot in ' + shoot.direction);
-      games[gameString].io.emit('do shoot', shoot);
+
+    socket.on('shoot', function(direction) {
+      console.log(gameString + ': ' + player.name + ' trying to shoot in ' + direction);
+      if (games[gameString].game) {
+        var shootResult = games[gameString].game.tryShoot(direction, player);
+        if (shootResult == 'OK') {
+          //alright shoot done
+          games[gameString].io.emit(emits.gameUpdate, games[gameString].game.getForSending());
+        } else {
+          //shoot not allowed
+          socket.emit(emits.shootResult, shootResult);
+        }
+      }
     });
   });
+  return gameString;
 }
 
 io.on('connection', function(socket) {
   console.log('a user connected');
   socket.on(('new game'),
     function() {
-      var gameString = makeRandomGameString(5);
-      console.log('Creating new game.. ' + gameString);
-      //creating new game
-      games[gameString] = {started: false, player0: {connected: false, initialized: false}, player1: {connected: false, initialized: false}};
-      createConnects(gameString);
+      var gameString = createNewGame();
       //telling the user the new game string
       socket.emit('gameString', gameString);
     });
