@@ -1,8 +1,14 @@
-function Player (name, color) {
-  saymyname(){
-    window.alert('My name is: ' + this.name);
+function Player () {
+  this.initialize = function(name, color){
+    this.name = name;
+    this.color = color;
+    this.initialized = true;
   }
 
-  this.name = name;
-  this.color = color;
+  this.color = null;
+  this.name = null;
+  this.connected = false;
+  this.initialized = false;
 }
+
+module.exports = Player;
