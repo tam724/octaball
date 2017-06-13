@@ -238,22 +238,31 @@ function input_color_change(value){
   var r,g,b;
   var max = 150;
   if(value < step){
-    r = max;
+    r = 0;
     g = parseInt(value/step*max,10);
     b = parseInt(max - value/step*max,10);
   }
   else if(value < 2*step){
-    b = max;
-    r = parseInt((value-step)/step*max,10);
-    g = parseInt(max - (value-step)/step*max,10);
+    b = 0;
+    g = parseInt((value-step)/step*max,10);
+    r = parseInt(max - (value-step)/step*max,10);
   }
   else{
-    g = max;
+    g = 0;
     b = parseInt((value-2*step)/step*max,10);
     r = parseInt(max - (value-2*step)/step*max,10);
   }
-  mycolor = "#"+(r).toString(16)+(g).toString(16)+(b).toString(16);
+  mycolor = "#"+toHex(r)+toHex(g)+toHex(b);
+  console.log(mycolor);
   input_name.style.backgroundColor = mycolor;
+}
+
+function toHex(value){
+  var hex = (value).toString(16);
+  while(hex.length < 2){
+    hex = hex + '0';
+  }
+  return hex;
 }
 /** helper */
 function gotoMainMenu(){
