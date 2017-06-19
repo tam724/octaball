@@ -268,8 +268,17 @@ playingLayout.shootResponse = function(response){
   }
 }
 playingLayout.onGameInterruptFunc = function(interrupt){
-  if(interrupt == messages.gameInterrupt.rst.gameStart){
+  if(interrupt.msg == messages.gameInterrupt.rst.gameStart){
     document.addEventListener('keypress', playingLayout.onKeyPress, false);
+  }
+  else if(interrupt.msg == messages.gameInterrupt.rst.gameEnd){
+    if(interrupt.data == 'disconnect'){
+      playingLayout.pageControls.updateStatusFunc('someone disconnected');
+    }
+    else if(interrupt.data == 'winner'){
+      playingLayout.pageControls.updateStatusFunc(interrupt.player.name + 'wins this game, congratulations!');
+      document.removeEventListener('keypress', playingLayout.onKeyPress, false);
+    }
   }
 }
 playingLayout.onKeyPress = function(event){

@@ -5,7 +5,7 @@ function Messages(){
   this.roomConnected = {rsp: 'roomConnected'};
   this.initialize = {msg: 'initialize', rsp: 'initialized'};
   this.gameUpdate = {rsp: 'gameUpdate'};
-  this.gameInterrupt = {rsp: 'gameInterrupt', rst: {gameStart: 'gameStart', gameEnd: 'gameEnd'}};
+  this.gameInterrupt = {rsp: 'gameInterrupt', rst: {gameStart: 'gameStart', gameEnd: 'gameEnd'}}; //interrupts can contain more information.. 
   this.shoot = {msg: 'shoot', rsp: 'shoot', rst: {ok: 'OK', gameWon: 'gameWon', notYourTurn: 'notYourTurn', occupied: 'shootOccupied', border: 'border'}};
 }
 

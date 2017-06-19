@@ -62,7 +62,7 @@ function createNewGame() {
     socket.on('disconnect', function() {
       if (player) {
         console.log(gameString + ':' + player.name + ' disconnected, ending the game');
-        games[gameString].io.emit(Messages.gameInterrupt.rsp, Messages.gameInterrupt.rst.endGame);
+        games[gameString].io.emit(Messages.gameInterrupt.rsp, {msg: Messages.gameInterrupt.rst.endGame, data: 'disconnect'});
         player.connected = false;
       }
       if (games[gameString].player0.connected == false && games[gameString].player1.connected == false) {
@@ -83,7 +83,7 @@ function createNewGame() {
           console.log(gameString + ': starting the game');
           games[gameString].game = new Game(games[gameString].player0, games[gameString].player1);
           games[gameString].io.emit(Messages.gameUpdate.rsp, games[gameString].game.getForSending());
-          games[gameString].io.emit(Messages.gameInterrupt.rsp, Messages.gameInterrupt.rst.gameStart);
+          games[gameString].io.emit(Messages.gameInterrupt.rsp, {msg: Messages.gameInterrupt.rst.gameStart});
         }
       }
     });
@@ -96,6 +96,9 @@ function createNewGame() {
           //alright shoot done
           socket.emit(Messages.shoot.rsp, Messages.shoot.rst.ok);
           games[gameString].io.emit(Messages.gameUpdate.rsp, games[gameString].game.getForSending());
+          if(games[gameString].game.winner != null){
+            games[gameString].io.emit(Messages.gameInterrupt.rsp, {msg: Messages.gameInterrupt.rst.gameEnd, data:'winner', player: games[gameString].game.winner});
+          }
         } else if(shootResult.msg == 'GameWon'){
           socket.emit(Messages.shoot.rsp, Messages.shoot.rst.gameWon);
         }
