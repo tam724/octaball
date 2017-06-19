@@ -260,6 +260,12 @@ playingLayout.shootResponse = function(response){
   else if(response == messages.shoot.rst.notYourTurn){
     playingLayout.pageControls.updateStatusFunc('it\'s not your turn');
   }
+  else if(response == messages.shoot.rst.occupied){
+    playingLayout.pageControls.updateStatusFunc('shoot already occupied');
+  }
+  else if(response == messages.shoot.rst.border){
+    playingLayout.pageControls.updateStatusFunc('shoot over border');
+  }
 }
 playingLayout.onGameInterruptFunc = function(interrupt){
   if(interrupt == messages.gameInterrupt.rst.gameStart){
@@ -270,7 +276,6 @@ playingLayout.onKeyPress = function(event){
   var direction = getDirectionfromKey(event.key);
   playingLayout.gameConnection.shoot(direction);
 }
-
 
 /** end layouts */
 

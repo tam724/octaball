@@ -96,11 +96,17 @@ function createNewGame() {
           //alright shoot done
           socket.emit(Messages.shoot.rsp, Messages.shoot.rst.ok);
           games[gameString].io.emit(Messages.gameUpdate.rsp, games[gameString].game.getForSending());
-        } else if(shootResult == 'GameWon'){
-          socket.emit(Messages.shoot.rsp, Messages.shoot.rsp.gameWon);
+        } else if(shootResult.msg == 'GameWon'){
+          socket.emit(Messages.shoot.rsp, Messages.shoot.rst.gameWon);
         }
-        else if(shootResult == 'NotYourTurn'){
-          socket.emit(Messages.shoot.rsp, Messages.shoot.rsp.notYourTurn);
+        else if(shootResult.msg == 'NotYourTurn'){
+          socket.emit(Messages.shoot.rsp, Messages.shoot.rst.notYourTurn);
+        }
+        else if(shootResult.msg == 'ShootOccupied'){
+          socket.emit(Messages.shoot.rsp, Messages.shoot.rst.occupied);
+        }
+        else if(shootResult.msg == 'Border'){
+          socket.emit(Messages.shoot.rsp, Messages.shoot.rst.border);
         }
         else{
           console.log('strange shoot Result: ' + shootResult);

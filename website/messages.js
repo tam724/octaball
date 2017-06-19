@@ -6,7 +6,7 @@ function Messages(){
   this.initialize = {msg: 'initialize', rsp: 'initialized'};
   this.gameUpdate = {rsp: 'gameUpdate'};
   this.gameInterrupt = {rsp: 'gameInterrupt', rst: {gameStart: 'gameStart', gameEnd: 'gameEnd'}};
-  this.shoot = {msg: 'shoot', rsp: 'shoot', rst: {ok: 'OK', gameWon: 'gameWon', notYourTurn: 'notYourTurn'}};
+  this.shoot = {msg: 'shoot', rsp: 'shoot', rst: {ok: 'OK', gameWon: 'gameWon', notYourTurn: 'notYourTurn', occupied: 'shootOccupied', border: 'border'}};
 }
 
 //export only in node.js
