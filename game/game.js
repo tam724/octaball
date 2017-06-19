@@ -70,18 +70,28 @@ function Game(player0, player1) {
   this.isValidShoot = function(direction) {
     if (this.ball.point[direction] != null) {
       if (this.ball.point[direction].player == null) {
-        return 'OK';
+        return {msg:'OK'};
       } else {
-        return 'Shoot already occupied by: ' + this.ball.point[direction].player.name;
+        return {msg:'ShootOccupied', p:this.ball.point[direction].player.name };
       }
     } else {
-      return 'Shoot over border';
+      return {msg: 'Border'};
     }
   }
 
   this.tryShoot = function(direction, player) {
+    if(this.winner){
+      return {msg: 'GameWon', p: this.winner.name};
+    }
+    if(this.activeplayer != player){
+      return {msg: 'NotYourTurn', p: this.activeplayer.name};
+    }
     var shootResult = this.isValidShoot(direction);
-    if (this.activeplayer == player && shootResult == 'OK' && !this.winner) {
+    if(shootResult.msg != 'OK'){
+      return shootResult;
+    }
+
+    if (this.activeplayer == player && shootResult.msg == 'OK' && !this.winner) {
       // actual shooting
       this.ball.point[direction].player = player;
       this.ball.point = this.ball.point[direction].getOtherPoint(this.ball.point);
@@ -91,10 +101,8 @@ function Game(player0, player1) {
         //player change if the active player is the first at a specific point (occupied == 1) and it is not the border (valid == 8)
         this.activeplayer = this.getOtherPlayer(this.activeplayer);
       }
-      return 'OK';
-    } else {
-      return shootResult;
     }
+    return {msg:'OK', p:this.activeplayer.name};
   }
 
   this.testWinner = function() {
@@ -124,9 +132,10 @@ function Game(player0, player1) {
       shoots: [],
       ball: {
         x: this.ball.point.x,
-        y: this.ball.point.y,
-        p: this.activeplayer.color
-      }
+        y: this.ball.point.y
+      },
+      player: {player0: this.player0, player1: this.player1},
+      activeplayer: this.activeplayer
     };
     for (var i = 0; i < this.shoots.length; i++) {
       if (this.shoots[i].player) {

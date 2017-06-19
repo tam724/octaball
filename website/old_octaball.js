@@ -38,7 +38,7 @@ function connectToOnlineGame(name, game_id, color, onConnected) {
   socket.on(ons.endGame, endGame);
   socket.on(ons.startGame, startGame);
   socket.on(ons.gameUpdate, drawField);
-  socket.on(ons.shootResult, function(err){window.alert(err);});
+  socket.on(ons.shootResult, shootResult);
 }
 
 function drawField(field){
@@ -118,6 +118,37 @@ function drawField(field){
   ctx.stroke();
 
   ctx.strokeStyle = '#000000';
+
+  if(field.activeplayername == myname){
+    updateStatusDiv('it\'s your turn');
+  }
+}
+
+function shootResult(result){
+  console.log(result.msg);
+  if(result.msg == 'OK'){
+    if(result.p == myname){
+      updateStatusDiv('it\'s your turn');
+    }
+    else{
+      updateStatusDiv('it\'s ' + result.p + '\'s turn');
+    }
+  }
+  else if(result.msg == 'NotYourTurn'){
+    updateStatusDiv('it\'s not your turn');
+  }
+  else if(result.msg == 'GameWon'){
+    updateStatusDiv('the game is over');
+  }
+  else if(result.msg == 'ShootOccupied'){
+    updateStatusDiv('shoot is already played by ' + result.p);
+  }
+  else if(result.msg == 'Border'){
+    updateStatusDiv('you cant play in this direction');
+  }
+  else if(result.msg == 'Winner'){
+    updateStatusDiv(result.p + ' wins this game. congratulations!')
+  }
 }
 
 function endGame() {
@@ -138,9 +169,17 @@ var keyDict = {
 function startGame(ply) {
   player = ply;
   showCanvas();
-  document.addEventListener('keypress', function(event) {
-    socket.emit('shoot', keyDict[event.key]);
-  }, false);
+  document.addEventListener('keypress', shoot, false);
+  if(ply.player0.name == myname){
+    updateStatusDiv('starting the game, its your turn');
+  }
+  else{
+    updateStatusDiv('starting the game, its ' + ply.player0.name +'\'s turn');
+  }
+}
+
+function shoot(event){
+  socket.emit('shoot', keyDict[event.key]);
 }
 
 /** page interaction */
@@ -149,11 +188,13 @@ var button_connect_online;
 var button_back;
 var button_connect;
 var button_ok;
+var button_again;
 
 var div_game_id;
 var div_name;
 var div_color;
 var div_title;
+var div_status;
 
 var input_game_id;
 var text_game_id;
@@ -165,12 +206,14 @@ function initialize(){
   button_connect_online = document.getElementById('button_connect_online');
   button_connect = document.getElementById('button_connect');
   button_back = document.getElementById('button_back');
-  button_ok = document.getElementById('button_ok')
+  button_ok = document.getElementById('button_ok');
+  button_again = document.getElementById('button_again');
 
   div_title = document.getElementById('div_title');
   div_game_id = document.getElementById('div_game_id');
   div_name = document.getElementById('div_name');
   div_color = document.getElementById('div_color');
+  div_status = document.getElementById('div_status');
 
   input_game_id = document.getElementById('input_game_id');
   input_color = document.getElementById('input_color');
@@ -183,7 +226,7 @@ var mycolor;
 function on_button_ok(){
   myname = input_name.value;
   if(!mycolor || myname == ''){
-    alert('please input name and color');
+    updateStatusDiv('you need to input name and color');
     return;
   }
   div_name.hidden = true;
@@ -203,6 +246,7 @@ function on_button_create_online(){
     div_game_id.hidden = false;
     input_game_id.value = gameString;
     input_game_id.disabled = true;
+    updateStatusDiv('share this code with your friend');
   })
 }
 
@@ -214,6 +258,11 @@ function on_button_connect_online(){
 
   div_game_id.hidden = false;
   input_game_id.disabled = false;
+  updateStatusDiv('enter the code you got..')
+}
+
+function on_button_again(){
+  socket.emit('again')
 }
 
 function on_button_back(){
@@ -244,8 +293,8 @@ function input_color_change(value){
   }
   else if(value < 2*step){
     b = 0;
-    g = parseInt((value-step)/step*max,10);
-    r = parseInt(max - (value-step)/step*max,10);
+    r = parseInt((value-step)/step*max,10);
+    g = parseInt(max - (value-step)/step*max,10);
   }
   else{
     g = 0;
@@ -257,6 +306,7 @@ function input_color_change(value){
   input_name.style.backgroundColor = mycolor;
 }
 
+/** helper */
 function toHex(value){
   var hex = (value).toString(16);
   while(hex.length < 2){
@@ -264,13 +314,15 @@ function toHex(value){
   }
   return hex;
 }
-/** helper */
+
 function gotoMainMenu(){
   if (socket) {
     socket.disconnect();
   }
+  document.removeEventListener('keypress', shoot, false);
   div_title.innerHTML = 'hi ' + myname + ', this is octaball';
   div_title.style.color = mycolor;
+  updateStatusDiv('choose..');
 
   button_create_online.hidden = false;
   button_connect_online.hidden = false;
@@ -278,6 +330,7 @@ function gotoMainMenu(){
   button_connect_online.disabled = false;
 
   button_connect.hidden = true;
+  button_again.hidden = true;
   canvas.hidden = true;
   button_back.hidden = true;
   div_game_id.hidden = true;
@@ -290,4 +343,8 @@ function showCanvas(){
   var ctx = c.getContext("2d");
   ctx.clearRect(0, 0, c.width, c.height);
   canvas.hidden = false;
+}
+
+function updateStatusDiv(text){
+  div_status.innerHTML = text;
 }

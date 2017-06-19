@@ -1,67 +1,22 @@
-var app = require('express')();
+var express = require('express');
+var app = express();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 var Game = require('./game/game');
 var Player = require('./game/player');
-
+var MsgClass = require('./website/messages.js');
+var Messages = new MsgClass();
 
 /** http server */
-var files = [{
-    name: '/',
-    path: '/index.html'
-  },
-  {
-    name: '/style.css',
-    path: '/style.css'
-  },
-  {
-    name: '/octaball.js',
-    path: '/octaball.js'
-  },
-  {
-    name: '/game/game.js',
-    path: '/game/game.js'
-  },
-  {
-    name: '/game/ball.js',
-    path: '/game/ball.js'
-  },
-  {
-    name: '/game/player.js',
-    path: '/game/player.js'
-  },
-  {
-    name: '/game/point.js',
-    path: '/game/point.js'
-  },
-  {
-    name: '/game/shoot.js',
-    path: '/game/shoot.js'
-  }
-];
-
-for (var i = 0; i < files.length; i++) {
-  app.get(files[i].name, function(path) {
-    return function(req, res) {
-      res.sendFile(__dirname + path);
-    }
-  }(files[i].path));
-}
-
+app.use(express.static('website'));
 http.listen(8080, function() {
   console.log('listening on *:8080');
 });
-
 /** end http server */
+
+/** game creation
 /** game handling */
 var games = {};
-var emits = {
-  octaballError: 'octaball error',
-  endGame: 'end game',
-  startGame: 'start game',
-  gameUpdate: 'gameUpdate',
-  shootResult: 'shootResult'
-};
 
 function makeRandomGameString(length) {
   do {
@@ -100,10 +55,14 @@ function createNewGame() {
       socket.emit(emits.octaballError, 'game is already full');
     }
 
+    if (games[gameString].player0.connected && games[gameString].player1.connected){
+      games[gameString].io.emit(Messages.roomConnected.rsp);
+    }
+
     socket.on('disconnect', function() {
       if (player) {
         console.log(gameString + ':' + player.name + ' disconnected, ending the game');
-        games[gameString].io.emit(emits.endGame);
+        games[gameString].io.emit(Messages.gameInterrupt.rsp, Messages.gameInterrupt.rst.endGame);
         player.connected = false;
       }
       if (games[gameString].player0.connected == false && games[gameString].player1.connected == false) {
@@ -113,34 +72,39 @@ function createNewGame() {
       }
     });
 
-    socket.on('initialize', function(ply) {
+    socket.on(Messages.initialize.msg, function(ply) {
       if (player) {
         player.initialize(ply.name, ply.color);
         console.log(gameString + ':' + player.name + ' initialized with color ' + player.color);
+        socket.emit(Messages.initialize.rsp);
 
         if (games[gameString].player0.initialized && games[gameString].player1.initialized) {
           //if there are two initialized players, start the game
           console.log(gameString + ': starting the game');
           games[gameString].game = new Game(games[gameString].player0, games[gameString].player1);
-          games[gameString].io.emit(emits.startGame, {
-            player0: games[gameString].player0,
-            player1: games[gameString].player1
-          });
-          games[gameString].io.emit(emits.gameUpdate, games[gameString].game.getForSending());
+          games[gameString].io.emit(Messages.gameUpdate.rsp, games[gameString].game.getForSending());
+          games[gameString].io.emit(Messages.gameInterrupt.rsp, Messages.gameInterrupt.rst.gameStart);
         }
       }
     });
 
-    socket.on('shoot', function(direction) {
+    socket.on(Messages.shoot.msg, function(direction) {
       console.log(gameString + ': ' + player.name + ' trying to shoot in ' + direction);
       if (games[gameString].game) {
         var shootResult = games[gameString].game.tryShoot(direction, player);
-        if (shootResult == 'OK') {
+        if (shootResult.msg == 'OK') {
           //alright shoot done
-          games[gameString].io.emit(emits.gameUpdate, games[gameString].game.getForSending());
-        } else {
-          //shoot not allowed
-          socket.emit(emits.shootResult, shootResult);
+          socket.emit(Messages.shoot.rsp, Messages.shoot.rst.ok);
+          games[gameString].io.emit(Messages.gameUpdate.rsp, games[gameString].game.getForSending());
+        } else if(shootResult == 'GameWon'){
+          socket.emit(Messages.shoot.rsp, Messages.shoot.rsp.gameWon);
+        }
+        else if(shootResult == 'NotYourTurn'){
+          socket.emit(Messages.shoot.rsp, Messages.shoot.rsp.notYourTurn);
+        }
+        else{
+          console.log('strange shoot Result: ' + shootResult);
+          socket.emit(Messages.shoot.rsp, shootResult);
         }
       }
     });
@@ -150,12 +114,19 @@ function createNewGame() {
 
 io.on('connection', function(socket) {
   console.log('a user connected');
-  socket.on(('new game'),
-    function() {
-      var gameString = createNewGame();
-      //telling the user the new game string
-      socket.emit('gameString', gameString);
-    });
+  socket.on(Messages.createID.msg, function() {
+    var gameID = createNewGame();
+    //telling the user the new game string
+    socket.emit(Messages.createID.rsp, gameID);
+  });
+  socket.on(Messages.checkID.msg, function(gameID) {
+    if(!games[gameID]){
+      socket.emit(Messages.checkID.rsp, Messages.checkID.rst.error);
+    }
+    else{
+      socket.emit(Messages.checkID.rsp, Messages.checkID.rst.ok);
+    }
+  })
   socket.on('disconnect', function() {
     console.log('user disconnected');
   });
