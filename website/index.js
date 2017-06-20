@@ -313,7 +313,7 @@ playingLayout.onGameInterrupt = function(interrupt) {
 }
 playingLayout.onGameInfo = function(info) {
   if (info.msg == messages.gameInfo.rst.again) {
-    playingLayout.pageControls.updateStatusFunc(info.player + 'wants to play again');
+    playingLayout.pageControls.updateStatusFunc(info.player + ' wants to play again');
   }
 }
 playingLayout.onKeyPress = function(event) {
