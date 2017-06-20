@@ -23,6 +23,9 @@ var welcomeLayout = new layout('welcome', 'layout_welcome.html', lytCtr, functio
     //initialize site
     this.pageControls.updateTitleFunc('octaball');
     this.pageControls.updateStatusFunc('type your name and choose a color');
+    if (par.gameID) {
+      this.gameID = par.gameID;
+    }
   },
   function() {
     //dest
@@ -36,13 +39,24 @@ welcomeLayout.onButtonOkay = function() {
   } else if (!welcomeLayout.color) {
     welcomeLayout.pageControls.updateStatusFunc('choose a color');
   } else {
-    welcomeLayout.layoutController.changeLayout(mainLayout.name, {
-      pageControls: welcomeLayout.pageControls,
-      playerInfo: {
-        name: welcomeLayout.inputName.value,
-        color: welcomeLayout.color
-      }
-    });
+    if (welcomeLayout.gameID) {
+      welcomeLayout.layoutController.changeLayout(connectLayout.name, {
+        pageControls: welcomeLayout.pageControls,
+        playerInfo: {
+          name: welcomeLayout.inputName.value,
+          color: welcomeLayout.color
+        },
+        gameID: welcomeLayout.gameID
+      });
+    } else {
+      welcomeLayout.layoutController.changeLayout(mainLayout.name, {
+        pageControls: welcomeLayout.pageControls,
+        playerInfo: {
+          name: welcomeLayout.inputName.value,
+          color: welcomeLayout.color
+        }
+      });
+    }
   }
 }
 welcomeLayout.onRangeColor = function() {
@@ -134,6 +148,7 @@ createLayout.onIDCreated = function(gameID) {
 createLayout.onConnectedToRoom = function() {
   //createLayout.layoutController.changeLayout()
   createLayout.inputGameId.value = createLayout.gameConnection.gameID;
+  createLayout.pageControls.updateHashFunc(createLayout.gameConnection.gameID);
   createLayout.divLoader.hidden = true;
   createLayout.pageControls.updateStatusFunc('share this gameID with your friend');
 }
@@ -171,6 +186,10 @@ var connectLayout = new layout('connect', 'layout_connect.html', lytCtr, functio
     this.divLoader.style.borderTopColor = this.playerInfo.color;
 
     this.gameConnection = new gameConnection();
+    if (par.gameID) {
+      this.inputGameId.value = par.gameID;
+      this.onButtonConnect();
+    }
   },
   function() {
     //dest
@@ -206,6 +225,7 @@ connectLayout.onCheckResult = function(result) {
 }
 connectLayout.onConnectedToRoom = function() {
   connectLayout.pageControls.updateStatusFunc('connected');
+  connectLayout.pageControls.updateHashFunc(connectLayout.gameConnection.gameID);
 }
 connectLayout.onRoomConnected = function() {
   //called when the room is filled with 2 people
@@ -240,70 +260,63 @@ var playingLayout = new layout('playing', 'layout_playing.html', lytCtr, functio
   this.inputBack.removeEventListener('click', this.onButtonBack);
   document.removeEventListener('keypress', this.onKeyPress, false);
 });
-playingLayout.onButtonBack = function(){
+playingLayout.onButtonBack = function() {
   playingLayout.layoutController.changeLayout(mainLayout.name, {
     pageControls: playingLayout.pageControls,
     playerInfo: playingLayout.playerInfo
   });
 }
-playingLayout.initializeOnServer = function(){
+playingLayout.initializeOnServer = function() {
   playingLayout.gameConnection.initializePlayer(playingLayout.playerInfo, playingLayout.initialized, playingLayout.redrawCanvas, playingLayout.shootResponse, playingLayout.onGameInterrupt, playingLayout.onGameInfo);
 }
-playingLayout.initialized = function(){
+playingLayout.initialized = function() {
   playingLayout.pageControls.updateStatusFunc('waiting for other player');
 }
-playingLayout.redrawCanvas = function(game){
+playingLayout.redrawCanvas = function(game) {
   drawFieldtoCanvas(playingLayout.canvasGame, game);
-  if(game.activeplayer.name == playingLayout.playerInfo.name){
+  if (game.activeplayer.name == playingLayout.playerInfo.name) {
     playingLayout.pageControls.updateStatusFunc('it\'s your turn');
-  }
-  else{
-    playingLayout.pageControls.updateStatusFunc('it is ' + game.activeplayer.name +'\'s turn');
+  } else {
+    playingLayout.pageControls.updateStatusFunc('it is ' + game.activeplayer.name + '\'s turn');
   }
 }
-playingLayout.shootResponse = function(response){
-  if(response == messages.shoot.rst.ok){
+playingLayout.shootResponse = function(response) {
+  if (response == messages.shoot.rst.ok) {
     //well done
-  }
-  else if(response == messages.shoot.rst.gameWon){
+  } else if (response == messages.shoot.rst.gameWon) {
     console.log(messages.shoot.rst.gameWon);
-  }
-  else if(response == messages.shoot.rst.notYourTurn){
+  } else if (response == messages.shoot.rst.notYourTurn) {
     playingLayout.pageControls.updateStatusFunc('it\'s not your turn');
-  }
-  else if(response == messages.shoot.rst.occupied){
+  } else if (response == messages.shoot.rst.occupied) {
     playingLayout.pageControls.updateStatusFunc('shoot already occupied');
-  }
-  else if(response == messages.shoot.rst.border){
+  } else if (response == messages.shoot.rst.border) {
     playingLayout.pageControls.updateStatusFunc('shoot over border');
   }
 }
-playingLayout.onGameInterrupt = function(interrupt){
-  if(interrupt.msg == messages.gameInterrupt.rst.gameStart){
+playingLayout.onGameInterrupt = function(interrupt) {
+  if (interrupt.msg == messages.gameInterrupt.rst.gameStart) {
     document.addEventListener('keypress', playingLayout.onKeyPress, false);
     playingLayout.inputAgain.hidden = true;
-  }
-  else if(interrupt.msg == messages.gameInterrupt.rst.gameEnd){
-    if(interrupt.data == 'disconnect'){
+  } else if (interrupt.msg == messages.gameInterrupt.rst.gameEnd) {
+    if (interrupt.data == 'disconnect') {
       playingLayout.pageControls.updateStatusFunc('the game ended, because someone disconnected');
       document.removeEventListener('keypress', playingLayout.onKeyPress, false);
-    }
-    else if(interrupt.data == 'winner'){
+    } else if (interrupt.data == 'winner') {
       playingLayout.pageControls.updateStatusFunc(interrupt.player.name + 'wins this game, congratulations!');
       document.removeEventListener('keypress', playingLayout.onKeyPress, false);
       playingLayout.inputAgain.hidden = false;
-      playingLayout.inputAgain.addEventListener('click', function(){
+      playingLayout.inputAgain.addEventListener('click', function() {
         playingLayout.gameConnection.again();
       })
     }
   }
 }
-playingLayout.onGameInfo = function(info){
-  if(info.msg == messages.gameInfo.rst.again){
+playingLayout.onGameInfo = function(info) {
+  if (info.msg == messages.gameInfo.rst.again) {
     playingLayout.pageControls.updateStatusFunc(info.player + 'wants to play again');
   }
 }
-playingLayout.onKeyPress = function(event){
+playingLayout.onKeyPress = function(event) {
   var direction = getDirectionfromKey(event.key);
   playingLayout.gameConnection.shoot(direction);
 }
@@ -325,18 +338,9 @@ function updateStatus(text) {
   divStatus.classList.add('updateStatusAnimation');
 }
 
-//main script
-lytCtr.registerLayout(welcomeLayout);
-lytCtr.registerLayout(mainLayout);
-lytCtr.registerLayout(createLayout);
-lytCtr.registerLayout(connectLayout);
-lytCtr.registerLayout(playingLayout);
-lytCtr.initializeLayout(welcomeLayout.name, {
-  pageControls: {
-    updateTitleFunc: updateTitle,
-    updateStatusFunc: updateStatus
-  }
-});
+function updateHash(gameID) {
+  window.location.hash = '#' + gameID;
+}
 
 //helper functions
 function getColorfromDouble(value) {
@@ -368,25 +372,25 @@ function toHex(value) {
   return hex;
 }
 
-function drawFieldtoCanvas(canvas, game){
+function drawFieldtoCanvas(canvas, game) {
   var context = canvas.getContext("2d");
   var width = canvas.width;
   var height = canvas.height;
 
   context.clearRect(0, 0, width, height);
 
-  var width_ = width/13;
-  var height_ = height/9;
+  var width_ = width / 13;
+  var height_ = height / 9;
 
   //quadrillpaper
   context.beginPath()
-  for(var i = 0; i < 13; i++){
-    context.moveTo(i*width_ + width_/2,0);
-    context.lineTo(i*width_ + width_/2,height);
+  for (var i = 0; i < 13; i++) {
+    context.moveTo(i * width_ + width_ / 2, 0);
+    context.lineTo(i * width_ + width_ / 2, height);
   }
-  for(var i = 0; i < 9; i++){
-    context.moveTo(0,i*height_ + height_/2);
-    context.lineTo(width,i*height_ + height_/2);
+  for (var i = 0; i < 9; i++) {
+    context.moveTo(0, i * height_ + height_ / 2);
+    context.lineTo(width, i * height_ + height_ / 2);
   }
   context.strokeStyle = '#A9D0F5';
   context.lineWidth = 1;
@@ -394,42 +398,48 @@ function drawFieldtoCanvas(canvas, game){
 
   //border
   context.beginPath();
-  context.moveTo(1*width_ + width_/2, 3*height_ + height_/2);
-  context.lineTo(1*width_ + width_/2, 0*height_ + height_/2);
-  context.lineTo(11*width_ + width_/2, 0*height_ + height_/2);
-  context.lineTo(11*width_ + width_/2, 3*height_ + height_/2);
+  context.moveTo(1 * width_ + width_ / 2, 3 * height_ + height_ / 2);
+  context.lineTo(1 * width_ + width_ / 2, 0 * height_ + height_ / 2);
+  context.lineTo(11 * width_ + width_ / 2, 0 * height_ + height_ / 2);
+  context.lineTo(11 * width_ + width_ / 2, 3 * height_ + height_ / 2);
 
-  context.moveTo(11*width_ + width_/2, 5*height_ + height_/2);
-  context.lineTo(11*width_ + width_/2, 8*height_ + height_/2);
-  context.lineTo(1*width_ + width_/2, 8*height_ + height_/2);
-  context.lineTo(1*width_ + width_/2, 5*height_ + height_/2);
+  context.moveTo(11 * width_ + width_ / 2, 5 * height_ + height_ / 2);
+  context.lineTo(11 * width_ + width_ / 2, 8 * height_ + height_ / 2);
+  context.lineTo(1 * width_ + width_ / 2, 8 * height_ + height_ / 2);
+  context.lineTo(1 * width_ + width_ / 2, 5 * height_ + height_ / 2);
 
   context.strokeStyle = '#000000';
   context.lineWidth = 2;
   context.stroke();
 
   context.beginPath();
-  context.moveTo(1*width_ + width_/2, 3*height_ + height_/2);
-  context.lineTo(0*width_ + width_/2, 3*height_ + height_/2);
-  context.lineTo(0*width_ + width_/2, 5*height_ + height_/2);
-  context.lineTo(1*width_ + width_/2, 5*height_ + height_/2);
+  context.moveTo(1 * width_ + width_ / 2, 3 * height_ + height_ / 2);
+  context.lineTo(0 * width_ + width_ / 2, 3 * height_ + height_ / 2);
+  context.lineTo(0 * width_ + width_ / 2, 5 * height_ + height_ / 2);
+  context.lineTo(1 * width_ + width_ / 2, 5 * height_ + height_ / 2);
 
   context.strokeStyle = game.player.player0.color;
   context.stroke();
 
   context.beginPath();
-  context.moveTo(11*width_ + width_/2, 3*height_ + height_/2);
-  context.lineTo(12*width_ + width_/2, 3*height_ + height_/2);
-  context.lineTo(12*width_ + width_/2, 5*height_ + height_/2);
-  context.lineTo(11*width_ + width_/2, 5*height_ + height_/2);
+  context.moveTo(11 * width_ + width_ / 2, 3 * height_ + height_ / 2);
+  context.lineTo(12 * width_ + width_ / 2, 3 * height_ + height_ / 2);
+  context.lineTo(12 * width_ + width_ / 2, 5 * height_ + height_ / 2);
+  context.lineTo(11 * width_ + width_ / 2, 5 * height_ + height_ / 2);
 
   context.strokeStyle = game.player.player1.color;
   context.stroke();
 
-  for(var i = 0; i < game.shoots.length; i++){
+  for (var i = 0; i < game.shoots.length; i++) {
     var shoot = game.shoots[i];
-    var pointA = {x: shoot.a.x*width_ + width_/2 , y: shoot.a.y*height_ + height_/2};
-    var pointB = {x: shoot.b.x*width_ + width_/2 , y: shoot.b.y*height_ + height_/2};
+    var pointA = {
+      x: shoot.a.x * width_ + width_ / 2,
+      y: shoot.a.y * height_ + height_ / 2
+    };
+    var pointB = {
+      x: shoot.b.x * width_ + width_ / 2,
+      y: shoot.b.y * height_ + height_ / 2
+    };
     context.beginPath();
     context.moveTo(pointA.x, pointA.y, 5, 5);
     context.lineTo(pointB.x, pointB.y, 5, 5);
@@ -440,13 +450,13 @@ function drawFieldtoCanvas(canvas, game){
 
   context.beginPath();
   context.strokeStyle = game.activeplayer.color;
-  context.rect(game.ball.x*width_ + width_/2 - 5, game.ball.y*height_ + height_/2 - 5, 10, 10);
+  context.rect(game.ball.x * width_ + width_ / 2 - 5, game.ball.y * height_ + height_ / 2 - 5, 10, 10);
   context.stroke();
 
   context.strokeStyle = '#000000';
 }
 
-function getDirectionfromKey(key){
+function getDirectionfromKey(key) {
   var keyDict = {
     q: 'G',
     w: 'F',
@@ -459,3 +469,22 @@ function getDirectionfromKey(key){
   };
   return keyDict[key];
 }
+
+//main script
+lytCtr.registerLayout(welcomeLayout);
+lytCtr.registerLayout(mainLayout);
+lytCtr.registerLayout(createLayout);
+lytCtr.registerLayout(connectLayout);
+lytCtr.registerLayout(playingLayout);
+var par = {
+  pageControls: {
+    updateTitleFunc: updateTitle,
+    updateStatusFunc: updateStatus,
+    updateHashFunc: updateHash
+  },
+};
+if (window.location.hash != '') {
+  var gameID = window.location.hash.substring(1, window.location.hash.length);
+  par.gameID = gameID;
+}
+lytCtr.initializeLayout(welcomeLayout.name, par);
