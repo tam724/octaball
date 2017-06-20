@@ -9,6 +9,7 @@ function Player () {
   this.name = null;
   this.connected = false;
   this.initialized = false;
+  this.again = false;
 }
 
 module.exports = Player;

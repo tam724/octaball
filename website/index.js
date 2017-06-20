@@ -220,23 +220,34 @@ var playingLayout = new layout('playing', 'layout_playing.html', lytCtr, functio
   // init
   // html elements
   this.canvasGame = document.getElementById('canvas_game');
-
+  this.inputBack = document.getElementById('input_back');
+  this.inputAgain = document.getElementById('input_again');
   //site controls
   this.pageControls = par.pageControls;
   this.playerInfo = par.playerInfo;
   this.gameConnection = par.gameConnection;
 
   //event listener
+  this.inputBack.addEventListener('click', this.onButtonBack);
   //variables
 
   //initialize site
+  playingLayout.inputAgain.hidden = true;
   this.initializeOnServer();
 }, function() {
   //dest
+  this.gameConnection.disconnect();
+  this.inputBack.removeEventListener('click', this.onButtonBack);
   document.removeEventListener('keypress', this.onKeyPress, false);
 });
+playingLayout.onButtonBack = function(){
+  playingLayout.layoutController.changeLayout(mainLayout.name, {
+    pageControls: playingLayout.pageControls,
+    playerInfo: playingLayout.playerInfo
+  });
+}
 playingLayout.initializeOnServer = function(){
-  playingLayout.gameConnection.initializePlayer(playingLayout.playerInfo, playingLayout.initialized, playingLayout.redrawCanvas, playingLayout.shootResponse, playingLayout.onGameInterruptFunc);
+  playingLayout.gameConnection.initializePlayer(playingLayout.playerInfo, playingLayout.initialized, playingLayout.redrawCanvas, playingLayout.shootResponse, playingLayout.onGameInterrupt, playingLayout.onGameInfo);
 }
 playingLayout.initialized = function(){
   playingLayout.pageControls.updateStatusFunc('waiting for other player');
@@ -267,18 +278,29 @@ playingLayout.shootResponse = function(response){
     playingLayout.pageControls.updateStatusFunc('shoot over border');
   }
 }
-playingLayout.onGameInterruptFunc = function(interrupt){
+playingLayout.onGameInterrupt = function(interrupt){
   if(interrupt.msg == messages.gameInterrupt.rst.gameStart){
     document.addEventListener('keypress', playingLayout.onKeyPress, false);
+    playingLayout.inputAgain.hidden = true;
   }
   else if(interrupt.msg == messages.gameInterrupt.rst.gameEnd){
     if(interrupt.data == 'disconnect'){
-      playingLayout.pageControls.updateStatusFunc('someone disconnected');
+      playingLayout.pageControls.updateStatusFunc('the game ended, because someone disconnected');
+      document.removeEventListener('keypress', playingLayout.onKeyPress, false);
     }
     else if(interrupt.data == 'winner'){
       playingLayout.pageControls.updateStatusFunc(interrupt.player.name + 'wins this game, congratulations!');
       document.removeEventListener('keypress', playingLayout.onKeyPress, false);
+      playingLayout.inputAgain.hidden = false;
+      playingLayout.inputAgain.addEventListener('click', function(){
+        playingLayout.gameConnection.again();
+      })
     }
+  }
+}
+playingLayout.onGameInfo = function(info){
+  if(info.msg == messages.gameInfo.rst.again){
+    playingLayout.pageControls.updateStatusFunc(info.player + 'wants to play again');
   }
 }
 playingLayout.onKeyPress = function(event){
