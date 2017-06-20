@@ -1,0 +1,71 @@
+body {
+  background-color: #ABB2B9;
+  text-align: center;
+  font-family: monospace;
+  padding: 30px;
+}
+
+.octaballDiv {
+  font-family: monospace;
+}
+
+.octaballButton {
+  border-color: #000000;
+  border-style: solid;
+  border-width: thin;
+  border-radius: 5px;
+  padding: 10px;
+  margin: 10px;
+  background-color: transparent;
+}
+
+.octaballButton:hover {
+  border-color: #777777;
+}
+
+.octaballButton:active {}
+
+.octaballTextInput {
+  border-color: #000000;
+  border-style: solid;
+  border-width: thin;
+  border-radius: 5px;
+  padding: 10px;
+  margin: 10px;
+  background-color: transparent;
+}
+
+.updateStatusAnimation {
+  animation: updateStatus 3s;
+}
+
+.loader {
+    border: 5px solid #f3f3f3; /* Light grey */
+    border-top: 5px solid;
+    border-radius: 50%;
+    width: 25px;
+    height: 25px;
+    margin: 0 auto;
+    animation: spin 1s linear infinite;
+}
+
+#div_title {
+  font-size: 40px;
+}
+
+#div_status {
+  font-size: 30px;
+}
+#div_parent {
+  padding:5px;
+}
+
+@keyframes updateStatus {
+  from {color: #ABB2B9; }
+  to {color: #000000; }
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
