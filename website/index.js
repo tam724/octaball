@@ -26,6 +26,11 @@ var welcomeLayout = new layout('welcome', 'layout_welcome.html', lytCtr, functio
     if (par.gameID) {
       this.gameID = par.gameID;
     }
+    if(par.playerInfo){
+      this.color = par.playerInfo.color;
+      this.inputName.value = par.playerInfo.name;
+      this.onButtonOkay();
+    }
   },
   function() {
     //dest
@@ -39,6 +44,8 @@ welcomeLayout.onButtonOkay = function() {
   } else if (!welcomeLayout.color) {
     welcomeLayout.pageControls.updateStatusFunc('choose a color');
   } else {
+    localStorage.name = welcomeLayout.inputName.value;
+    localStorage.color = welcomeLayout.color;
     if (welcomeLayout.gameID) {
       welcomeLayout.layoutController.changeLayout(connectLayout.name, {
         pageControls: welcomeLayout.pageControls,
@@ -71,6 +78,7 @@ var mainLayout = new layout('main', 'layout_main.html', lytCtr, function(par) {
     // html elements
     this.inputCreate = document.getElementById('input_create');
     this.inputConnect = document.getElementById('input_connect');
+    this.inputChangeName = document.getElementById('input_change_name');
 
     //site controls
     this.pageControls = par.pageControls;
@@ -79,12 +87,15 @@ var mainLayout = new layout('main', 'layout_main.html', lytCtr, function(par) {
     //event listener
     this.inputCreate.addEventListener('click', this.onButtonCreate);
     this.inputConnect.addEventListener('click', this.onButtonConnect);
+    this.inputChangeName.addEventListener('click', this.onButtonChangeName);
 
     //variables
 
     //initialize site
     this.pageControls.updateTitleFunc('hi ' + this.playerInfo.name + ', this is octaball');
     this.pageControls.updateStatusFunc('create a new or connect to a existing game');
+
+    this.pageControls.updateHashFunc('');
   },
   function() {
     //dest
@@ -102,6 +113,11 @@ mainLayout.onButtonConnect = function() {
     pageControls: mainLayout.pageControls,
     playerInfo: mainLayout.playerInfo
   });
+}
+mainLayout.onButtonChangeName = function(){
+  mainLayout.layoutController.changeLayout(welcomeLayout.name, {
+    pageControls: mainLayout.pageControls
+  })
 }
 
 // layout create
@@ -339,7 +355,11 @@ function updateStatus(text) {
 }
 
 function updateHash(gameID) {
-  window.location.hash = '#' + gameID;
+  if (gameID == '') {
+    window.location.hash = '';
+  } else {
+    window.location.hash = '#' + gameID;
+  }
 }
 
 //helper functions
@@ -367,7 +387,7 @@ function getColorfromDouble(value) {
 function toHex(value) {
   var hex = (value).toString(16);
   while (hex.length < 2) {
-    hex = hex + '0';
+    hex = '0' + hex;
   }
   return hex;
 }
@@ -486,5 +506,11 @@ var par = {
 if (window.location.hash != '') {
   var gameID = window.location.hash.substring(1, window.location.hash.length);
   par.gameID = gameID;
+}
+if (localStorage.name && localStorage.color) {
+  par.playerInfo =  {
+    name: localStorage.name,
+    color: localStorage.color
+  }
 }
 lytCtr.initializeLayout(welcomeLayout.name, par);
