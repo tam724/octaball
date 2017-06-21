@@ -8,6 +8,7 @@ var welcomeLayout = new layout('welcome', 'layout_welcome.html', lytCtr, functio
     this.inputName = document.getElementById('input_name');
     this.inputColor = document.getElementById('input_color');
     this.inputOkay = document.getElementById('input_okay');
+    this.inputRemember = document.getElementById('input_remember');
 
     //site controls
     this.pageControls = par.pageControls;
@@ -26,7 +27,7 @@ var welcomeLayout = new layout('welcome', 'layout_welcome.html', lytCtr, functio
     if (par.gameID) {
       this.gameID = par.gameID;
     }
-    if(par.playerInfo){
+    if (par.playerInfo) {
       this.color = par.playerInfo.color;
       this.inputName.value = par.playerInfo.name;
       this.onButtonOkay();
@@ -44,8 +45,14 @@ welcomeLayout.onButtonOkay = function() {
   } else if (!welcomeLayout.color) {
     welcomeLayout.pageControls.updateStatusFunc('choose a color');
   } else {
-    localStorage.name = welcomeLayout.inputName.value;
-    localStorage.color = welcomeLayout.color;
+    if (welcomeLayout.inputRemember.checked) {
+      localStorage.setItem('name', welcomeLayout.inputName.value);
+      localStorage.setItem('color', welcomeLayout.color);
+    }
+    else{
+      localStorage.removeItem('name');
+      localStorage.removeItem('color');
+    }
     if (welcomeLayout.gameID) {
       welcomeLayout.layoutController.changeLayout(connectLayout.name, {
         pageControls: welcomeLayout.pageControls,
@@ -114,7 +121,7 @@ mainLayout.onButtonConnect = function() {
     playerInfo: mainLayout.playerInfo
   });
 }
-mainLayout.onButtonChangeName = function(){
+mainLayout.onButtonChangeName = function() {
   mainLayout.layoutController.changeLayout(welcomeLayout.name, {
     pageControls: mainLayout.pageControls
   })
@@ -507,10 +514,10 @@ if (window.location.hash != '') {
   var gameID = window.location.hash.substring(1, window.location.hash.length);
   par.gameID = gameID;
 }
-if (localStorage.name && localStorage.color) {
-  par.playerInfo =  {
-    name: localStorage.name,
-    color: localStorage.color
+if (localStorage.getItem('name') != null && localStorage.getItem('color') != null) {
+  par.playerInfo = {
+    name: localStorage.getItem('name'),
+    color: localStorage.getItem('color')
   }
 }
 lytCtr.initializeLayout(welcomeLayout.name, par);

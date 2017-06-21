@@ -23,6 +23,10 @@ body {
   border-color: #777777;
 }
 
+.octaballCheckbox label:before {
+    //TODO
+}
+
 .octaballButton:active {}
 
 .octaballTextInput {
