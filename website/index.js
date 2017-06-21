@@ -24,6 +24,7 @@ var welcomeLayout = new layout('welcome', 'layout_welcome.html', lytCtr, functio
     //initialize site
     this.pageControls.updateTitleFunc('octaball');
     this.pageControls.updateStatusFunc('type your name and choose a color');
+    this.inputRemember.checked = true;
     if (par.gameID) {
       this.gameID = par.gameID;
     }
