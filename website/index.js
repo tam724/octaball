@@ -274,6 +274,9 @@ var playingLayout = new layout('playing', 'layout_playing.html', lytCtr, functio
   this.inputBack.addEventListener('click', this.onButtonBack);
   //variables
 
+  this.touchStartPos = null;
+  this.touchEndPos = null;
+
   //initialize site
   playingLayout.inputAgain.hidden = true;
   this.initializeOnServer();
@@ -281,7 +284,7 @@ var playingLayout = new layout('playing', 'layout_playing.html', lytCtr, functio
   //dest
   this.gameConnection.disconnect();
   this.inputBack.removeEventListener('click', this.onButtonBack);
-  document.removeEventListener('keypress', this.onKeyPress, false);
+  this.removeGameControls();
 });
 playingLayout.onButtonBack = function() {
   playingLayout.layoutController.changeLayout(mainLayout.name, {
@@ -318,21 +321,33 @@ playingLayout.shootResponse = function(response) {
 }
 playingLayout.onGameInterrupt = function(interrupt) {
   if (interrupt.msg == messages.gameInterrupt.rst.gameStart) {
-    document.addEventListener('keypress', playingLayout.onKeyPress, false);
+    playingLayout.addGameControls();
     playingLayout.inputAgain.hidden = true;
   } else if (interrupt.msg == messages.gameInterrupt.rst.gameEnd) {
     if (interrupt.data == 'disconnect') {
       playingLayout.pageControls.updateStatusFunc('the game ended, because someone disconnected');
-      document.removeEventListener('keypress', playingLayout.onKeyPress, false);
+      playingLayout.removeGameControls();
     } else if (interrupt.data == 'winner') {
       playingLayout.pageControls.updateStatusFunc(interrupt.player.name + 'wins this game, congratulations!');
-      document.removeEventListener('keypress', playingLayout.onKeyPress, false);
+      playingLayout.removeGameControls();
       playingLayout.inputAgain.hidden = false;
       playingLayout.inputAgain.addEventListener('click', function() {
         playingLayout.gameConnection.again();
       })
     }
   }
+}
+playingLayout.addGameControls = function(){
+  document.addEventListener('keypress', playingLayout.onKeyPress, false);
+  playingLayout.canvasGame.addEventListener('touchstart', playingLayout.onTouchDown, false);
+  playingLayout.canvasGame.addEventListener('touchmove', playingLayout.onTouchMove, false);
+  playingLayout.canvasGame.addEventListener('touchend', playingLayout.onTouchUp, false);
+}
+playingLayout.removeGameControls = function(){
+  document.removeEventListener('keypress', playingLayout.onKeyPress, false);
+  playingLayout.canvasGame.removeEventListener('touchstart', playingLayout.onTouchDown, false);
+  playingLayout.canvasGame.removeEventListener('touchmove', playingLayout.onTouchMove, false);
+  playingLayout.canvasGame.removeEventListener('touchend', playingLayout.onTouchUp, false);
 }
 playingLayout.onGameInfo = function(info) {
   if (info.msg == messages.gameInfo.rst.again) {
@@ -342,6 +357,30 @@ playingLayout.onGameInfo = function(info) {
 playingLayout.onKeyPress = function(event) {
   var direction = getDirectionfromKey(event.key);
   playingLayout.gameConnection.shoot(direction);
+}
+playingLayout.onTouchDown = function(event){
+  event.preventDefault();
+  playingLayout.touchStartPos = {x: event.touches[0].pageX, y: event.touches[0].pageY};
+}
+playingLayout.onTouchMove = function(event){
+  event.preventDefault();
+  playingLayout.touchEndPos = {x: event.touches[event.touches.length-1].pageX, y: event.touches[event.touches.length-1].pageY};
+}
+playingLayout.onTouchUp = function(event){
+  event.preventDefault();
+  if(playingLayout.touchStartPos && playingLayout.touchEndPos){
+    var swipe = {x: playingLayout.touchEndPos.x - playingLayout.touchStartPos.x, y: playingLayout.touchEndPos.y - playingLayout.touchStartPos.y};
+    if(Math.sqrt(swipe.x**2 + swipe.y**2) > 50){
+      var angle = Math.atan2(swipe.x, swipe.y);
+      angle = angle + Math.PI;
+      angle = angle/(2*Math.PI);
+      angle = angle*8;
+      angle = Math.round(angle);
+      var directions = ['w','q','a','y','x','c','d','e','w'];
+      playingLayout.gameConnection.shoot(getDirectionfromKey(directions[angle]));
+    }
+  }
+  playingLayout,touchStartPos = null;
 }
 
 /** end layouts */
