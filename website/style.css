@@ -1,8 +1,21 @@
+:root {
+  --title-height: 40px;
+  --status-height: 40px;
+  --logo-height: 30px;
+}
+html {
+  height: 100%;
+  margin: 0px;
+  padding: 0px;
+}
+
 body {
   background-color: #ABB2B9;
   text-align: center;
   font-family: monospace;
-  padding: 30px;
+  height: calc(100% - 20px);
+  margin: 10px;
+  padding: 0px;
 }
 
 .octaballDiv {
@@ -14,8 +27,9 @@ body {
   border-style: solid;
   border-width: thin;
   border-radius: 5px;
+  height: 37px;
   padding: 10px;
-  margin: 10px;
+  margin: 5px;
   background-color: transparent;
 }
 
@@ -24,7 +38,7 @@ body {
 }
 
 .octaballCheckbox label:before {
-    //TODO
+  //TODO
 }
 
 .octaballButton:active {}
@@ -35,7 +49,7 @@ body {
   border-width: thin;
   border-radius: 5px;
   padding: 10px;
-  margin: 10px;
+  margin: 5px;
   background-color: transparent;
 }
 
@@ -44,41 +58,88 @@ body {
 }
 
 .loader {
-    border: 5px solid #f3f3f3; /* Light grey */
-    border-top: 5px solid;
-    border-radius: 50%;
-    width: 25px;
-    height: 25px;
-    margin: 0 auto;
-    animation: spin 1s linear infinite;
+  border: 5px solid #f3f3f3;
+  /* Light grey */
+  border-top: 5px solid;
+  border-radius: 50%;
+  width: 25px;
+  height: 25px;
+  margin: 0 auto;
+  animation: spin 1s linear infinite;
 }
 
-#logo {
-  width: 150px;
+.logo {
+  height: var(--logo-height);
+}
+
+.logo_share {
+  display: inline;
+  height: 35px;
+  margin: 0px;
+  padding: 0px;
+  border-color: #000000;
+  border-style: solid;
+  border-width: thin;
+  border-radius: 5px;
+}
+
+.div_share {
+  display:inline-table;
+  vertical-align:middle;
+  text-align:center;
+  height: 30px;
+  border-color: #000000;
+  border-style: solid;
+  border-width: thin;
+  border-radius: 5px;
+  margin: 5px;
+  background-color: transparent;
+}
+
+.logoButton {
+  padding: 5px;
+  height: 27px;
 }
 
 #div_footer {
-  padding-top: 100px;
+  height: var(--logo-height);
 }
 
 #div_title {
-  font-size: 40px;
-}
-
-#div_status {
+  height: var(--title-height);
   font-size: 30px;
 }
 
+#div_status {
+  height: var(--status-height);
+  font-size: 17px;
+}
+
 #div_parent {
-  padding:5px;
+  height: calc(100% - (var(--title-height) + var(--status-height) + var(--logo-height)));
+}
+
+#div_wrapper {
+  //overflow: hidden;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
 }
 
 @keyframes updateStatus {
-  from {color: #ABB2B9; }
-  to {color: #000000; }
+  from {
+    color: #ABB2B9;
+  }
+  to {
+    color: #000000;
+  }
 }
 
 @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }

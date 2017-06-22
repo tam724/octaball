@@ -68,7 +68,7 @@ function createNewGame() {
     }
 
     socket.on('disconnect', function() {
-      if (player) {
+      if (player && games[gameString]) {
         console.log(gameString + ':' + player.name + ' disconnected, ending the game');
         games[gameString].io.emit(Messages.gameInterrupt.rsp, {
           msg: Messages.gameInterrupt.rst.gameEnd,
@@ -76,7 +76,7 @@ function createNewGame() {
         });
         player.connected = false;
       }
-      if (games[gameString].player0.connected == false && games[gameString].player1.connected == false) {
+      if (games[gameString] && (games[gameString].player0.connected == false || games[gameString].player1.connected == false)) {
         console.log(gameString + ': deleting');
         delete games[gameString];
         delete io.nsps['/' + gameString];
@@ -84,7 +84,7 @@ function createNewGame() {
     });
 
     socket.on(Messages.initialize.msg, function(ply) {
-      if (player) {
+      if (player && games[gameString]) {
         player.initialize(ply.name, ply.color);
         console.log(gameString + ':' + player.name + ' initialized with color ' + player.color);
         socket.emit(Messages.initialize.rsp);
@@ -99,7 +99,7 @@ function createNewGame() {
 
     socket.on(Messages.shoot.msg, function(direction) {
       console.log(gameString + ': ' + player.name + ' trying to shoot in ' + direction);
-      if (games[gameString].game) {
+      if (games[gameString] && games[gameString].game) {
         var shootResult = games[gameString].game.tryShoot(direction, player);
         if (shootResult.msg == 'OK') {
           //alright shoot done
@@ -128,7 +128,7 @@ function createNewGame() {
     });
 
     socket.on(Messages.gameInfo.msg, function(info) {
-      if (games[gameString].game) {
+      if (games[gameString] && games[gameString].game) {
         if (info == Messages.gameInfo.rst.again) {
           if (games[gameString].game.winner) {
             player.again = true;
@@ -146,7 +146,18 @@ function createNewGame() {
       }
     });
   });
+  setInterval(deleteGame, 300000, gameString);
   return gameString;
+}
+
+function deleteGame(gameString){
+  if(games[gameString]){
+    if(!(games[gameString].player0.initialized || games[gameString].player1.initialized)){
+      console.log(gameString + ': deleting');
+      delete games[gameString];
+      delete io.nsps['/' + gameString];
+    }
+  }
 }
 
 
