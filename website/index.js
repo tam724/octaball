@@ -365,6 +365,7 @@ playingLayout.onGameInterrupt = function(interrupt) {
     if (interrupt.data == 'disconnect') {
       playingLayout.pageControls.updateStatusFunc('the game ended, because someone disconnected');
       playingLayout.removeGameControls();
+      playingLayout.inputAgain.hidden = true;
     } else if (interrupt.data == 'winner') {
       playingLayout.pageControls.updateStatusFunc(interrupt.player.name + ' wins this game, congratulations!');
       playingLayout.removeGameControls();
