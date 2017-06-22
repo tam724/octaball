@@ -23,6 +23,10 @@ body {
   border-color: #777777;
 }
 
+.octaballCheckbox label:before {
+    //TODO
+}
+
 .octaballButton:active {}
 
 .octaballTextInput {
@@ -49,6 +53,14 @@ body {
     animation: spin 1s linear infinite;
 }
 
+#logo {
+  width: 150px;
+}
+
+#div_footer {
+  padding-top: 100px;
+}
+
 #div_title {
   font-size: 40px;
 }
@@ -56,6 +68,7 @@ body {
 #div_status {
   font-size: 30px;
 }
+
 #div_parent {
   padding:5px;
 }

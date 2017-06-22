@@ -37,7 +37,7 @@ function gameConnection(){
     this.gameSocket.on(messages.roomConnected.rsp, onRoomConnectedFunc);
   }
 
-  this.initializePlayer = function(player, onInitializedFunc, onGameUpdateFunc, onShootResponseFunc, onGameInterruptFunc){
+  this.initializePlayer = function(player, onInitializedFunc, onGameUpdateFunc, onShootResponseFunc, onGameInterruptFunc, onGameInfoFunc){
     if(!this.isInitialized()){
       console.log('not connected to a room');
     }
@@ -46,6 +46,7 @@ function gameConnection(){
       this.gameSocket.on(messages.gameUpdate.rsp, onGameUpdateFunc);
       this.gameSocket.on(messages.shoot.rsp, onShootResponseFunc);
       this.gameSocket.on(messages.gameInterrupt.rsp, onGameInterruptFunc);
+      this.gameSocket.on(messages.gameInfo.rsp, onGameInfoFunc);
       this.gameSocket.emit(messages.initialize.msg, player);
     }
   }
@@ -59,7 +60,22 @@ function gameConnection(){
     }
   }
 
+  this.again = function(){
+    if(!this.isInitialized()){
+      console.log('not connected to a room');
+    }
+    else{
+      this.gameSocket.emit(messages.gameInfo.msg, messages.gameInfo.rst.again);
+    }
+  }
+
   this.isInitialized = function(){
     return true;
+  }
+
+  this.disconnect = function(){
+    if(this.isInitialized()){
+      this.gameSocket.disconnect();
+    }
   }
 }
