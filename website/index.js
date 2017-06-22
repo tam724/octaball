@@ -152,7 +152,7 @@ var createLayout = new layout('create', 'layout_create.html', lytCtr, function(p
     //initialize site
     this.pageControls.updateStatusFunc('creating a new game for you..');
     this.divLoader.style.borderTopColor = this.playerInfo.color;
-    this.inputGameId.disabled = true;
+    this.inputGameId.readOnly = true;
     this.gameConnection = new gameConnection();
     this.createID();
   },
@@ -161,6 +161,7 @@ var createLayout = new layout('create', 'layout_create.html', lytCtr, function(p
     this.inputBack.removeEventListener('click', this.onButtonBack);
   });
 createLayout.onButtonBack = function() {
+  createLayout.gameConnection.disconnect();
   createLayout.layoutController.changeLayout(mainLayout.name, {
     pageControls: createLayout.pageControls,
     playerInfo: createLayout.playerInfo
@@ -237,7 +238,7 @@ connectLayout.onButtonBack = function() {
 connectLayout.onButtonConnect = function() {
   var gameID = connectLayout.inputGameId.value;
   if (gameID && gameID != '' && gameID.length == 5) {
-    connectLayout.inputGameId.disabled = true;
+    connectLayout.inputGameId.readonly = true;
     connectLayout.divLoader.hidden = false;
     connectLayout.gameConnection.checkID(gameID, connectLayout.onCheckResult);
   } else {
@@ -250,7 +251,7 @@ connectLayout.onCheckResult = function(result) {
     connectLayout.pageControls.updateStatusFunc('connecting to game');
     connectLayout.gameConnection.connectToRoom(connectLayout.inputGameId.value, connectLayout.onConnectedToRoom, connectLayout.onRoomConnected);
   } else if (result == messages.checkID.rst.error) {
-    connectLayout.inputGameId.disabled = false;
+    connectLayout.inputGameId.readOnly = false;
     connectLayout.divLoader.hidden = true;
     connectLayout.pageControls.updateStatusFunc('this id does not exist');
   }
