@@ -429,7 +429,7 @@ playingLayout.onTouchUp = function(event) {
       playingLayout.gameConnection.shoot(getDirectionfromKey(directions[angle], playingLayout.alignment));
     }
   }
-  playingLayout, touchStartPos = null;
+  playingLayout.touchStartPos = null;
 }
 playingLayout.onResize = function() {
   console.log('onresize');
