@@ -8,7 +8,9 @@ var MsgClass = require('./website/messages.js');
 var Messages = new MsgClass();
 
 /** http server */
-app.use(express.static('website'));
+app.use('/game', express.static('game'));
+app.use('/', express.static('website'));
+
 http.listen(8080, function() {
   console.log('listening on *:8080');
 });

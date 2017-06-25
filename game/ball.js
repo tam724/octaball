@@ -2,4 +2,6 @@ function Ball (point){
   this.point = point;
 }
 
-module.exports = Ball;
+if(typeof module !== 'undefined'){
+  module.exports = Ball;
+}

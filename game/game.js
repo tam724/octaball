@@ -1,8 +1,9 @@
-var Point = require('./point');
-var Shoot = require('./shoot');
-var Ball = require('./ball');
-var Player = require('./player');
-
+if (typeof module !== 'undefined') {
+  var Point = require('./point');
+  var Shoot = require('./shoot');
+  var Ball = require('./ball');
+  var Player = require('./player');
+}
 
 function Game(player0, player1) {
   /** initializes the points */
@@ -70,24 +71,37 @@ function Game(player0, player1) {
   this.isValidShoot = function(direction) {
     if (this.ball.point[direction] != null) {
       if (this.ball.point[direction].player == null) {
-        return {msg:'OK'};
+        return {
+          msg: 'OK'
+        };
       } else {
-        return {msg:'ShootOccupied', p:this.ball.point[direction].player.name };
+        return {
+          msg: 'ShootOccupied',
+          p: this.ball.point[direction].player.name
+        };
       }
     } else {
-      return {msg: 'Border'};
+      return {
+        msg: 'Border'
+      };
     }
   }
 
   this.tryShoot = function(direction, player) {
-    if(this.winner){
-      return {msg: 'GameWon', p: this.winner.name};
+    if (this.winner) {
+      return {
+        msg: 'GameWon',
+        p: this.winner.name
+      };
     }
-    if(this.activeplayer != player){
-      return {msg: 'NotYourTurn', p: this.activeplayer.name};
+    if (this.activeplayer != player) {
+      return {
+        msg: 'NotYourTurn',
+        p: this.activeplayer.name
+      };
     }
     var shootResult = this.isValidShoot(direction);
-    if(shootResult.msg != 'OK'){
+    if (shootResult.msg != 'OK') {
       return shootResult;
     }
 
@@ -102,7 +116,10 @@ function Game(player0, player1) {
         this.activeplayer = this.getOtherPlayer(this.activeplayer);
       }
     }
-    return {msg:'OK', p:this.activeplayer.name};
+    return {
+      msg: 'OK',
+      p: this.activeplayer.name
+    };
   }
 
   this.testWinner = function() {
@@ -134,7 +151,10 @@ function Game(player0, player1) {
         x: this.ball.point.x,
         y: this.ball.point.y
       },
-      player: {player0: this.player0, player1: this.player1},
+      player: {
+        player0: this.player0,
+        player1: this.player1
+      },
       activeplayer: this.activeplayer
     };
     for (var i = 0; i < this.shoots.length; i++) {
@@ -163,4 +183,6 @@ function Game(player0, player1) {
   this.ball = new Ball(this.points[6][4]);
 }
 
-module.exports = Game;
+if (typeof module !== 'undefined') {
+  module.exports = Game;
+}
