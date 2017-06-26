@@ -95,6 +95,24 @@ function gameConnection() {
             player: this.offlineSingleGame.game.winner
           });
         }
+        if (this.offlineSingleGame.game.activeplayer == this.offlineSingleGame.player1) { // player1 should always be the computer player
+          var gameAI = new GameAI(this.offlineSingleGame.game, this.offlineSingleGame.player1);
+          var shoot = gameAI.computeShoot();
+          for (var i = 0; i < shoot.length; i++) {
+            var aiShootResult = this.offlineSingleGame.game.tryShoot(shoot[i], this.offlineSingleGame.player1);
+            if (aiShootResult.msg != 'OK' && aiShootResult.msg != 'GameWon') {
+              console.log('strange ai shoot');
+            }
+          }
+          this.offlineSingleGame.onGameUpdateFunc(this.offlineSingleGame.game.getForSending());
+          if (this.offlineSingleGame.game.winner != null) {
+            this.offlineSingleGame.onGameInterruptFunc({
+              msg: messages.gameInterrupt.rst.gameEnd,
+              data: 'winner',
+              player: this.offlineSingleGame.game.winner
+            });
+          }
+        }
       } else if (shootResult.msg == 'GameWon') {
         this.offlineSingleGame.onShootResponseFunc(messages.shoot.rst.gameWon);
       } else if (shootResult.msg == 'NotYourTurn') {
@@ -115,7 +133,7 @@ function gameConnection() {
       this.gameSocket.emit(messages.gameInfo.msg, messages.gameInfo.rst.again);
     } else if (this.gameType == 'offlineSingle') {
       this.offlineSingleGame.game = new Game(this.offlineSingleGame.player0, this.offlineSingleGame.player1);
-      this.offlineSingleGame.onGameUpdateFunc(game.getForSending());
+      this.offlineSingleGame.onGameUpdateFunc(this.offlineSingleGame.game.getForSending());
       this.offlineSingleGame.onGameInterruptFunc({
         msg: messages.gameInterrupt.rst.gameStart
       });
