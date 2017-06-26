@@ -1,3 +1,11 @@
+window.onerror = function(messageOrEvent, source, lineno, colno, error){
+  if(confirm('on snap!\nyou just found an error\ndo you want to send it to the developer?')){
+    var body = document.getElementById('body');
+    body.innerHTML = 'open a new issue on <a href="http://www.github.com/tam724/octaball/issues">github</a> or send me an <a href="mailto:tamme-c@gmx.de?Subject=octaball error&Body='+error.stack+'">email</a> (tamme-c@gmx.de): </br></br>'
+    body.innerHTML += error.stack;
+    }
+  return false;
+}
 /** layouts */
 var lytCtr = new layoutController('div_parent');
 
