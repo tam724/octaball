@@ -1,8 +1,9 @@
-var Point = require('./point');
-var Shoot = require('./shoot');
-var Ball = require('./ball');
-var Player = require('./player');
-
+if (typeof module !== 'undefined') {
+  var Point = require('./point');
+  var Shoot = require('./shoot');
+  var Ball = require('./ball');
+  var Player = require('./player');
+}
 
 function Game(player0, player1) {
   /** initializes the points */
@@ -70,24 +71,37 @@ function Game(player0, player1) {
   this.isValidShoot = function(direction) {
     if (this.ball.point[direction] != null) {
       if (this.ball.point[direction].player == null) {
-        return {msg:'OK'};
+        return {
+          msg: 'OK'
+        };
       } else {
-        return {msg:'ShootOccupied', p:this.ball.point[direction].player.name };
+        return {
+          msg: 'ShootOccupied',
+          p: this.ball.point[direction].player.name
+        };
       }
     } else {
-      return {msg: 'Border'};
+      return {
+        msg: 'Border'
+      };
     }
   }
 
   this.tryShoot = function(direction, player) {
-    if(this.winner){
-      return {msg: 'GameWon', p: this.winner.name};
+    if (this.winner) {
+      return {
+        msg: 'GameWon',
+        p: this.winner.name
+      };
     }
-    if(this.activeplayer != player){
-      return {msg: 'NotYourTurn', p: this.activeplayer.name};
+    if (this.activeplayer != player) {
+      return {
+        msg: 'NotYourTurn',
+        p: this.activeplayer.name
+      };
     }
     var shootResult = this.isValidShoot(direction);
-    if(shootResult.msg != 'OK'){
+    if (shootResult.msg != 'OK') {
       return shootResult;
     }
 
@@ -102,7 +116,10 @@ function Game(player0, player1) {
         this.activeplayer = this.getOtherPlayer(this.activeplayer);
       }
     }
-    return {msg:'OK', p:this.activeplayer.name};
+    return {
+      msg: 'OK',
+      p: this.activeplayer.name
+    };
   }
 
   this.testWinner = function() {
@@ -134,7 +151,10 @@ function Game(player0, player1) {
         x: this.ball.point.x,
         y: this.ball.point.y
       },
-      player: {player0: this.player0, player1: this.player1},
+      player: {
+        player0: this.player0,
+        player1: this.player1
+      },
       activeplayer: this.activeplayer
     };
     for (var i = 0; i < this.shoots.length; i++) {
@@ -163,4 +183,74 @@ function Game(player0, player1) {
   this.ball = new Ball(this.points[6][4]);
 }
 
-module.exports = Game;
+function GameAI(game, player) {
+  this.game = game;
+  this.player = player;
+  this.directions = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+  this.directionScore = {
+    A: 1,
+    B: 0,
+    C: -1,
+    D: -1,
+    E: -1,
+    F: 0,
+    G: 1,
+    H: 1
+  };
+  this.shoots = [];
+  this.currentScore = -1000;
+
+  this.computeShoot = function() {
+    var point = this.game.ball.point;
+    this.searchRecursive(this.player, point, '');
+    var currentShoot = this.shoots[Math.floor(Math.random() * this.shoots.length)];
+    console.log(currentShoot);
+    return currentShoot;
+  }
+
+  this.searchRecursive = function(player, point, shoot) {
+    for (var i = 0; i < 8; i++) {
+      if (point[this.directions[i]] != null && point[this.directions[i]].player == null) {
+        //if shoot exists and is not already occupied
+        if (point[this.directions[i]].AItry == null) {
+          //if shoot is not already occupied by this AItry
+          point[this.directions[i]].AItry = player; //do the shoot
+          var nextShoot = shoot + this.directions[i]; //add shoot
+          var nextPoint = point[this.directions[i]].getOtherPoint(point)
+          if (nextPoint.occupiedShoots().length == 0 && nextPoint.validDirections().length == 8) {
+            //shoot is over
+            var score = 0;
+            for (var j = 0; j < nextShoot.length; j++) {
+              score += this.directionScore[nextShoot.charAt(j)];
+            }
+            this.addToShoots(score, nextShoot);
+          } else if (nextPoint.x == 0) {
+            //computer wins
+            score = 100;
+            this.addToShoots(score, nextShoot);
+          } else if (nextPoint.x == 12) {
+            score = -100;
+            this.addToShoots(score, nextShoot);
+          } else {
+            //again
+            this.searchRecursive(player, nextPoint, nextShoot);
+          }
+          point[this.directions[i]].AItry = null;
+        }
+      }
+    }
+  }
+
+  this.addToShoots = function(score, shoot) {
+    if (this.currentScore < score) {
+      this.shoots = [shoot];
+      this.currentScore = score;
+    } else if (this.currentScore == score) {
+      this.shoots.push(shoot);
+    }
+  }
+}
+
+if (typeof module !== 'undefined') {
+  module.exports = Game;
+}

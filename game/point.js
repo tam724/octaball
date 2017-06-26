@@ -1,4 +1,4 @@
-function Point (x,y) {
+function Point(x, y) {
   /** returns if the ball is on this point */
   this.hasBall = function(game) {
     return (game.ball.point == this);
@@ -55,4 +55,6 @@ function Point (x,y) {
   this.H = null;
 }
 
-module.exports = Point;
+if (typeof module !== 'undefined') {
+  module.exports = Point;
+}

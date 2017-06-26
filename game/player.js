@@ -1,5 +1,5 @@
-function Player () {
-  this.initialize = function(name, color){
+function Player() {
+  this.initialize = function(name, color) {
     this.name = name;
     this.color = color;
     this.initialized = true;
@@ -12,4 +12,7 @@ function Player () {
   this.again = false;
 }
 
-module.exports = Player;
+
+if (typeof module !== 'undefined') {
+  module.exports = Player;
+}

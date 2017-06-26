@@ -1,3 +1,11 @@
+window.onerror = function(messageOrEvent, source, lineno, colno, error){
+  if(confirm('on snap!\nyou just found an error\ndo you want to send it to the developer?')){
+    var body = document.getElementById('body');
+    body.innerHTML = 'open a new issue on <a href="http://www.github.com/tam724/octaball/issues">github</a> or send me an <a href="mailto:tamme-c@gmx.de?Subject=octaball error&Body='+error.stack+'">email</a> (tamme-c@gmx.de): </br></br>'
+    body.innerHTML += error.stack;
+    }
+  return false;
+}
 /** layouts */
 var lytCtr = new layoutController('div_parent');
 
@@ -27,8 +35,7 @@ var welcomeLayout = new layout('welcome', 'layout_welcome.html', lytCtr, functio
     this.inputRemember.checked = true;
     if (par.gameID) {
       this.gameID = par.gameID;
-    }
-    else{
+    } else {
       this.gameID = null;
     }
     if (par.playerInfo) {
@@ -89,6 +96,7 @@ var mainLayout = new layout('main', 'layout_main.html', lytCtr, function(par) {
     this.inputCreate = document.getElementById('input_create');
     this.inputConnect = document.getElementById('input_connect');
     this.inputChangeName = document.getElementById('input_change_name');
+    this.inputSingleplayer = document.getElementById('input_singleplayer');
 
     //site controls
     this.pageControls = par.pageControls;
@@ -98,6 +106,7 @@ var mainLayout = new layout('main', 'layout_main.html', lytCtr, function(par) {
     this.inputCreate.addEventListener('click', this.onButtonCreate);
     this.inputConnect.addEventListener('click', this.onButtonConnect);
     this.inputChangeName.addEventListener('click', this.onButtonChangeName);
+    this.inputSingleplayer.addEventListener('click', this.onButtonSingleplayer);
 
     //variables
 
@@ -111,6 +120,7 @@ var mainLayout = new layout('main', 'layout_main.html', lytCtr, function(par) {
     //dest
     this.inputCreate.removeEventListener('click', this.onButtonCreate);
     this.inputConnect.removeEventListener('click', this.onButtonConnect);
+    this.inputSingleplayer.removeEventListener('click', this.onButtonSingleplayer);
   });
 mainLayout.onButtonCreate = function() {
   mainLayout.layoutController.changeLayout(createLayout.name, {
@@ -127,6 +137,14 @@ mainLayout.onButtonConnect = function() {
 mainLayout.onButtonChangeName = function() {
   mainLayout.layoutController.changeLayout(welcomeLayout.name, {
     pageControls: mainLayout.pageControls
+  });
+}
+mainLayout.onButtonSingleplayer = function() {
+  mainLayout.layoutController.changeLayout(playingLayout.name, {
+    pageControls: mainLayout.pageControls,
+    playerInfo: mainLayout.playerInfo,
+    gameType: 'offlineSingle',
+    gameConnection: new gameConnection()
   })
 }
 
@@ -279,13 +297,17 @@ var playingLayout = new layout('playing', 'layout_playing.html', lytCtr, functio
   this.pageControls = par.pageControls;
   this.playerInfo = par.playerInfo;
   this.gameConnection = par.gameConnection;
+  if (par.gameType) {
+    this.gameType = par.gameType;
+  } else {
+    this.gameType = 'online';
+  }
 
   //event listener
   this.inputBack.addEventListener('click', this.onButtonBack);
   window.addEventListener('resize', playingLayout.onResize);
 
   //variables
-
   this.touchStartPos = null;
   this.touchEndPos = null;
 
@@ -293,8 +315,8 @@ var playingLayout = new layout('playing', 'layout_playing.html', lytCtr, functio
 
   //initialize site
   playingLayout.inputAgain.hidden = true;
-  this.initializeOnServer();
   this.resize();
+  playingLayout.gameConnection.initializePlayer(playingLayout.playerInfo, playingLayout.initialized, playingLayout.redrawCanvas, playingLayout.shootResponse, playingLayout.onGameInterrupt, playingLayout.onGameInfo, this.gameType);
 }, function() {
   //dest
   this.gameConnection.disconnect();
@@ -329,9 +351,6 @@ playingLayout.onButtonBack = function() {
     pageControls: playingLayout.pageControls,
     playerInfo: playingLayout.playerInfo
   });
-}
-playingLayout.initializeOnServer = function() {
-  playingLayout.gameConnection.initializePlayer(playingLayout.playerInfo, playingLayout.initialized, playingLayout.redrawCanvas, playingLayout.shootResponse, playingLayout.onGameInterrupt, playingLayout.onGameInfo);
 }
 playingLayout.initialized = function() {
   playingLayout.pageControls.updateStatusFunc('waiting for other player');
@@ -396,7 +415,9 @@ playingLayout.onGameInfo = function(info) {
 }
 playingLayout.onKeyPress = function(event) {
   var direction = getDirectionfromKey(event.key, playingLayout.alignment);
-  playingLayout.gameConnection.shoot(direction);
+  if (!playingLayout.gameConnection.shoot(direction)) {
+    playingLayout.pageControls.updateStatusFunc('Waiting for server..');
+  }
 }
 playingLayout.onTouchDown = function(event) {
   event.preventDefault();
@@ -426,10 +447,12 @@ playingLayout.onTouchUp = function(event) {
       angle = angle * 8;
       angle = Math.round(angle);
       var directions = ['w', 'q', 'a', 'y', 'x', 'c', 'd', 'e', 'w'];
-      playingLayout.gameConnection.shoot(getDirectionfromKey(directions[angle], playingLayout.alignment));
+      if (!playingLayout.gameConnection.shoot(getDirectionfromKey(directions[angle], playingLayout.alignment))) {
+        playingLayout.pageControls.updateStatusFunc('Waiting for server..');
+      }
     }
   }
-  playingLayout, touchStartPos = null;
+  playingLayout.touchStartPos = null;
 }
 playingLayout.onResize = function() {
   console.log('onresize');
