@@ -2,13 +2,12 @@ var express = require('express');
 var app = express();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
-var Game = require('./game/game');
-var Player = require('./game/player');
+var Game = require('./website/game/game');
+var Player = require('./website/game/player');
 var MsgClass = require('./website/messages.js');
 var Messages = new MsgClass();
 
 /** http server */
-app.use('/game', express.static('game'));
 app.use('/', express.static('website'));
 
 http.listen(8080, function() {
