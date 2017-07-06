@@ -9,7 +9,7 @@ function gameConnection() {
   this.offlineSingleGame = null;
 
   this.createID = function(onIDReadyFunc) {
-    var socket = io();
+    var socket = io('https://octaball-octaball.1d35.starter-us-east-1.openshiftapps.com/');
     socket.on(messages.connect.rsp, function() {
       socket.on(messages.createID.rsp, function(gameID) {
         socket.disconnect();
@@ -21,7 +21,7 @@ function gameConnection() {
   }
 
   this.checkID = function(gameID, onIDCheckedFunc) {
-    var socket = io();
+    var socket = io('https://octaball-octaball.1d35.starter-us-east-1.openshiftapps.com/');
     socket.on(messages.connect.rsp, function() {
       socket.on(messages.checkID.rsp, function(result) {
         socket.disconnect();
@@ -35,7 +35,7 @@ function gameConnection() {
 
   this.connectToRoom = function(gameID, onConnectedFunc, onRoomConnectedFunc) {
     this.gameID = gameID;
-    this.gameSocket = io('/' + this.gameID);
+    this.gameSocket = io('https://octaball-octaball.1d35.starter-us-east-1.openshiftapps.com/' + this.gameID);
     this.gameSocket.on(messages.connect.rsp, onConnectedFunc);
     this.gameSocket.on(messages.roomConnected.rsp, onRoomConnectedFunc);
   }
