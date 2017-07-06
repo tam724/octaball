@@ -10,7 +10,7 @@ window.onerror = function(messageOrEvent, source, lineno, colno, error){
 var lytCtr = new layoutController('div_parent');
 
 // layout welcome
-var welcomeLayout = new layout('welcome', 'layout_welcome.html', lytCtr, function(par) {
+var welcomeLayout = new layout('welcome', 'website/layout_welcome.html', lytCtr, function(par) {
     // init
     // html elements
     this.inputName = document.getElementById('input_name');
@@ -90,7 +90,7 @@ welcomeLayout.onRangeColor = function() {
 }
 
 // layout main
-var mainLayout = new layout('main', 'layout_main.html', lytCtr, function(par) {
+var mainLayout = new layout('main', 'website/layout_main.html', lytCtr, function(par) {
     // init
     // html elements
     this.inputCreate = document.getElementById('input_create');
@@ -149,7 +149,7 @@ mainLayout.onButtonSingleplayer = function() {
 }
 
 // layout create
-var createLayout = new layout('create', 'layout_create.html', lytCtr, function(par) {
+var createLayout = new layout('create', 'website/layout_create.html', lytCtr, function(par) {
     // init
     // html elements
     this.inputGameId = document.getElementById('input_game_id');
@@ -214,7 +214,7 @@ createLayout.onRoomConnected = function() {
 }
 
 // layout connect
-var connectLayout = new layout('connect', 'layout_connect.html', lytCtr, function(par) {
+var connectLayout = new layout('connect', 'website/layout_connect.html', lytCtr, function(par) {
     // init
     // html elements
     this.inputGameId = document.getElementById('input_game_id');
@@ -287,7 +287,7 @@ connectLayout.onRoomConnected = function() {
   })
 }
 
-var playingLayout = new layout('playing', 'layout_playing.html', lytCtr, function(par) {
+var playingLayout = new layout('playing', 'website/layout_playing.html', lytCtr, function(par) {
   // init
   // html elements
   this.canvasGame = document.getElementById('canvas_game');
