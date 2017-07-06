@@ -1,7 +1,7 @@
 # octaball
 a two player "paper and pencil" game
 
-try it out: https://octaball-octaball.1d35.starter-us-east-1.openshiftapps.com/
+try it out: [tam724.github.io/octaball/](https:///tam724.github.io/octaball/ "octaball")
 
 ## rules
 - from each point the ball can be moved in 8 directions (horizontal, vertical, diagonal)
