@@ -213,9 +213,12 @@ function GameAI(game, player) {
     var score = 0;
     if (endPoint.x == 0) {
       score = 100;
-    } else if (endPoint.x == 12 || allOccupied) {
+    } else if (endPoint.x == 12){
       score = -100;
-    } else {
+    } else if(allOccupied){
+      score = -200;
+    }
+    else {
       for (var j = 0; j < shoot.length; j++) {
         score += this.directionScore[shoot.charAt(j)];
       }
@@ -236,7 +239,7 @@ function GameAI(game, player) {
     if (endPoint.x == 0) {
       score = -50;
     } else if (endPoint.x == 12) {
-      score = 502;
+      score = 50;
     } else {
       for (var j = 0; j < shoot.length; j++) {
         score -= this.directionScore[shoot.charAt(j)];
