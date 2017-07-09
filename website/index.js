@@ -171,6 +171,9 @@ var createLayout = new layout('create', 'website/layout_create.html', lytCtr, fu
     this.pageControls.updateStatusFunc('creating a new game for you..');
     this.divLoader.style.borderTopColor = this.playerInfo.color;
     this.inputGameId.readOnly = true;
+    this.aShareWhatsapp.hidden = true;
+    this.aShareTelegram.hidden = true;
+    this.aShareMail.hidden = true;
     this.gameConnection = new gameConnection();
     this.createID();
   },
@@ -201,7 +204,9 @@ createLayout.onConnectedToRoom = function() {
   createLayout.aShareWhatsapp.href = 'whatsapp://send?text=' + shareMessage;
   createLayout.aShareTelegram.href = "tg:msg?text=" + shareMessage;
   createLayout.aShareMail.href = 'mailto:?subject=Octaball&body=' + shareMessage;
-  console.log(createLayout.aShareWhatsapp.href);
+  createLayout.aShareWhatsapp.hidden = false;
+  createLayout.aShareTelegram.hidden = false;
+  createLayout.aShareMail.hidden = false;
   createLayout.pageControls.updateStatusFunc('share this gameID with your friend');
 }
 createLayout.onRoomConnected = function() {
