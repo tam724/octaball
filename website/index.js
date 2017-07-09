@@ -315,11 +315,13 @@ var playingLayout = new layout('playing', 'website/layout_playing.html', lytCtr,
 
   //initialize site
   playingLayout.inputAgain.hidden = true;
+  this.pageControls.hideTitleFunc();
   this.resize();
   playingLayout.gameConnection.initializePlayer(playingLayout.playerInfo, playingLayout.initialized, playingLayout.redrawCanvas, playingLayout.shootResponse, playingLayout.onGameInterrupt, playingLayout.onGameInfo, this.gameType);
 }, function() {
   //dest
   this.gameConnection.disconnect();
+  this.pageControls.showTitleFunc();
   this.inputBack.removeEventListener('click', this.onButtonBack);
   window.removeEventListener('resize', playingLayout.onResize);
   this.removeGameControls();
@@ -466,9 +468,27 @@ playingLayout.onResize = function() {
 
 var divTitle = document.getElementById('div_title');
 var divStatus = document.getElementById('div_status');
+var divParent = document.getElementById('div_parent');
+var divFooter = document.getElementById('div_footer');
 
 function updateTitle(text) {
   divTitle.innerHTML = text;
+}
+
+function showTitle(){
+  document.documentElement.style.setProperty('--title-height','40px');
+  document.documentElement.style.setProperty('--logo-height','30px');
+  divTitle.hidden = false;
+  divFooter.hidden = false;
+  window.dispatchEvent(new Event('resize'));
+}
+
+function hideTitle(){
+  document.documentElement.style.setProperty('--title-height','0px');
+  document.documentElement.style.setProperty('--logo-height','0px');
+  divTitle.hidden = true;
+  divFooter.hidden = true;
+  window.dispatchEvent(new Event('resize'));
 }
 
 function updateStatus(text) {
@@ -651,7 +671,9 @@ var par = {
   pageControls: {
     updateTitleFunc: updateTitle,
     updateStatusFunc: updateStatus,
-    updateHashFunc: updateHash
+    updateHashFunc: updateHash,
+    showTitleFunc: showTitle,
+    hideTitleFunc: hideTitle
   },
 };
 if (window.location.hash != '') {
