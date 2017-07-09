@@ -200,15 +200,57 @@ function GameAI(game, player) {
   this.shoots = [];
   this.currentScore = -1000;
 
+
   this.computeShoot = function() {
     var point = this.game.ball.point;
-    this.searchRecursive(this.player, point, '');
+    this.searchRecursive(this.player, point, '', this.onShootFound);
     var currentShoot = this.shoots[Math.floor(Math.random() * this.shoots.length)];
     console.log(currentShoot);
     return currentShoot;
   }
 
-  this.searchRecursive = function(player, point, shoot) {
+  this.onShootFound = function(shoot, endPoint, allOccupied) {
+    var score = 0;
+    if (endPoint.x == 0) {
+      score = 100;
+    } else if (endPoint.x == 12){
+      score = -100;
+    } else if(allOccupied){
+      score = -200;
+    }
+    else {
+      for (var j = 0; j < shoot.length; j++) {
+        score += this.directionScore[shoot.charAt(j)];
+      }
+      this.opponentScore = -1000;
+      this.searchRecursive(this.game.getOtherPlayer(player), endPoint, '', this.onOpponentShootFound);
+      score = score - this.opponentScore;
+    }
+    if (this.currentScore < score) {
+      this.shoots = [shoot];
+      this.currentScore = score;
+    } else if (this.currentScore == score) {
+      this.shoots.push(shoot);
+    }
+  }
+
+  this.onOpponentShootFound = function(shoot, endPoint, allOccupied) {
+    var score = 0;
+    if (endPoint.x == 0) {
+      score = -50;
+    } else if (endPoint.x == 12) {
+      score = 50;
+    } else {
+      for (var j = 0; j < shoot.length; j++) {
+        score -= this.directionScore[shoot.charAt(j)];
+      }
+    }
+    if (this.opponentScore < score) {
+      this.opponentScore = score;
+    }
+  }
+
+  this.searchRecursive = function(player, point, shoot, onShootFound) {
     for (var i = 0; i < 8; i++) {
       if (point[this.directions[i]] != null && point[this.directions[i]].player == null) {
         //if shoot exists and is not already occupied
@@ -216,37 +258,21 @@ function GameAI(game, player) {
           //if shoot is not already occupied by this AItry
           point[this.directions[i]].AItry = player; //do the shoot
           var nextShoot = shoot + this.directions[i]; //add shoot
-          var nextPoint = point[this.directions[i]].getOtherPoint(point)
-          if (nextPoint.occupiedShoots().length == 0 && nextPoint.validDirections().length == 8) {
-            //shoot is over
-            var score = 0;
-            for (var j = 0; j < nextShoot.length; j++) {
-              score += this.directionScore[nextShoot.charAt(j)];
-            }
-            this.addToShoots(score, nextShoot);
-          } else if (nextPoint.x == 0) {
-            //computer wins
-            score = 100;
-            this.addToShoots(score, nextShoot);
-          } else if (nextPoint.x == 12) {
-            score = -100;
-            this.addToShoots(score, nextShoot);
+          var nextPoint = point[this.directions[i]].getOtherPoint(point);
+          var AItries = 0;
+          for (var j = 0; j < 8; j++) {
+            if (nextPoint[this.directions[j]] != null && nextPoint[this.directions[j]].AItry != null) AItries++;
+          }
+          var allOccupied = nextPoint.validShoots().length == (nextPoint.occupiedShoots().length + AItries);
+          if ((nextPoint.occupiedShoots().length == 0 && nextPoint.validDirections().length == 8) || nextPoint.x == 0 || nextPoint.x == 12 || allOccupied) {
+            onShootFound.call(this, nextShoot, nextPoint, allOccupied);
           } else {
             //again
-            this.searchRecursive(player, nextPoint, nextShoot);
+            this.searchRecursive(player, nextPoint, nextShoot, onShootFound);
           }
           point[this.directions[i]].AItry = null;
         }
       }
-    }
-  }
-
-  this.addToShoots = function(score, shoot) {
-    if (this.currentScore < score) {
-      this.shoots = [shoot];
-      this.currentScore = score;
-    } else if (this.currentScore == score) {
-      this.shoots.push(shoot);
     }
   }
 }
