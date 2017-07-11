@@ -96,22 +96,7 @@ function gameConnection() {
           });
         }
         if (this.offlineSingleGame.game.activeplayer == this.offlineSingleGame.player1) { // player1 should always be the computer player
-          var gameAI = new GameAI(this.offlineSingleGame.game, this.offlineSingleGame.player1);
-          var shoot = gameAI.computeShoot();
-          for (var i = 0; i < shoot.length; i++) {
-            var aiShootResult = this.offlineSingleGame.game.tryShoot(shoot[i], this.offlineSingleGame.player1);
-            if (aiShootResult.msg != 'OK' && aiShootResult.msg != 'GameWon') {
-              console.log('strange ai shoot');
-            }
-          }
-          this.offlineSingleGame.onGameUpdateFunc(this.offlineSingleGame.game.getForSending());
-          if (this.offlineSingleGame.game.winner != null) {
-            this.offlineSingleGame.onGameInterruptFunc({
-              msg: messages.gameInterrupt.rst.gameEnd,
-              data: 'winner',
-              player: this.offlineSingleGame.game.winner
-            });
-          }
+          setTimeout(this.doAIShoots.bind(this), 1000);
         }
       } else if (shootResult.msg == 'GameWon') {
         this.offlineSingleGame.onShootResponseFunc(messages.shoot.rst.gameWon);
@@ -126,6 +111,31 @@ function gameConnection() {
       }
       return true;
     }
+  }
+
+  this.doAIShoots = function() {
+    var gameAI = new GameAI(this.offlineSingleGame.game, this.offlineSingleGame.player1);
+    var shoot = gameAI.computeShoot().reverse();
+    setTimeout(this.doAIShoot.bind(this, shoot), 100);
+  }
+
+  this.doAIShoot = function(shoot) {
+    var aiShootResult = this.offlineSingleGame.game.tryShoot(shoot.pop(), this.offlineSingleGame.player1);
+    if (aiShootResult.msg != 'OK' && aiShootResult.msg != 'GameWon') {
+      console.log('strange ai shoot');
+    }
+    this.offlineSingleGame.onGameUpdateFunc(this.offlineSingleGame.game.getForSending());
+    if (this.offlineSingleGame.game.winner != null) {
+      this.offlineSingleGame.onGameInterruptFunc({
+        msg: messages.gameInterrupt.rst.gameEnd,
+        data: 'winner',
+        player: this.offlineSingleGame.game.winner
+      });
+    }
+    if (shoot.length != 0){
+      setTimeout(this.doAIShoot.bind(this, shoot), 300);
+    }
+
   }
 
   this.again = function() {
