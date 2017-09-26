@@ -342,8 +342,6 @@ playingLayout.resize = function() {
   var h_height_ver = height / 13;
   var h_hor = Math.min(h_width_hor, h_height_hor);
   var h_ver = Math.min(h_width_ver, h_height_ver);
-  console.log(width)
-  console.log(height);
 
   if (h_hor > h_ver) {
     //horizontal
@@ -470,7 +468,6 @@ playingLayout.onTouchUp = function(event) {
   playingLayout.touchStartPos = null;
 }
 playingLayout.onResize = function() {
-  console.log('onresize');
   playingLayout.resize()
   if (playingLayout.currentGame) {
     playingLayout.redrawCanvas(playingLayout.currentGame);
@@ -639,9 +636,7 @@ function drawFieldtoCanvas(canvas, game, alignment) {
         x2: posB.x,
         y2: posB.y
       });
-      ball = canvas.polygon("1,0 0.707,0.707 0,1 -0.707,0.707 -1,0 -0.707,-0.707 0,-1 0.707,-0.707").size(15, 15).fill({
-        color: "#000000"
-      }).center(posA.x, posA.y).animate({
+      drawBall(posA, canvas, game.activeplayer.color).animate({
         ease: "<>",
         duration: 200
       }).center(ballPos.x, ballPos.y);
@@ -653,19 +648,21 @@ function drawFieldtoCanvas(canvas, game, alignment) {
         x2: posA.x,
         y2: posA.y
       });
-      ball = canvas.polygon("1,0 0.707,0.707 0,1 -0.707,0.707 -1,0 -0.707,-0.707 0,-1 0.707,-0.707").size(15, 15).fill({
-        color: "#000000"
-      }).center(posB.x, posB.y).animate({
+      drawBall(posB, canvas, game.activeplayer.color).animate({
         ease: "<>",
         duration: 200
-      }).center(ballPos.x, ballPos.y);
+      }).center(ballPos.x,ballPos.y);
     }
   } else {
     ballPos = getPosition(game.ball.x, game.ball.y, alignment, canvas);
-    ball = canvas.polygon("1,0 0.707,0.707 0,1 -0.707,0.707 -1,0 -0.707,-0.707 0,-1 0.707,-0.707").size(15, 15).fill({
-      color: "#000000"
-    }).center(ballPos.x, ballPos.y);
+    drawBall(ballPos, canvas, game.activeplayer.color)
   }
+}
+
+function drawBall(point, canvas, color) {
+  return canvas.polygon("1,0 0.707,0.707 0,1 -0.707,0.707 -1,0 -0.707,-0.707 0,-1 0.707,-0.707 1,0").size(15, 15).fill({
+    color: color
+  }).center(point.x, point.y);
 }
 
 function drawLine(pointA, pointB, canvas, border) {
@@ -673,14 +670,12 @@ function drawLine(pointA, pointB, canvas, border) {
 }
 
 function getPosition(i, j, alignment, canvas) {
-  console.log(canvas.height)
-  console.log(canvas.width);
   if (alignment == "vertical") {
-    x = (1 / 9 * j + 1 / 18)*canvas.width
-    y = (1-(1 / 13 * i + 1 / 26))*canvas.height
+    x = (1 / 9 * j + 1 / 18) * canvas.width
+    y = (1 - (1 / 13 * i + 1 / 26)) * canvas.height
   } else {
-    x = (1 / 13 * i + 1 / 26)*canvas.width
-    y = (1 / 9 * j + 1 / 18)*canvas.height
+    x = (1 / 13 * i + 1 / 26) * canvas.width
+    y = (1 / 9 * j + 1 / 18) * canvas.height
   }
   return {
     x: x,
