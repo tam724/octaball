@@ -105,6 +105,11 @@ body {
   height: var(--logo-height);
 }
 
+#div_game {
+  display: block;
+  margin: auto;
+}
+
 #div_title {
   height: var(--title-height);
   font-size: 30px;

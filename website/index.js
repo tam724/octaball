@@ -1,9 +1,9 @@
-window.onerror = function(messageOrEvent, source, lineno, colno, error){
-  if(confirm('on snap!\nyou just found an error\ndo you want to send it to the developer?')){
+window.onerror = function(messageOrEvent, source, lineno, colno, error) {
+  if (confirm('on snap!\nyou just found an error\ndo you want to send it to the developer?')) {
     var body = document.getElementById('body');
-    body.innerHTML = 'open a new issue on <a href="http://www.github.com/tam724/octaball/issues">github</a> or send me an <a href="mailto:tamme-c@gmx.de?Subject=octaball error&Body='+error.stack+'">email</a> (tamme-c@gmx.de): </br></br>'
+    body.innerHTML = 'open a new issue on <a href="http://www.github.com/tam724/octaball/issues">github</a> or send me an <a href="mailto:tamme-c@gmx.de?Subject=octaball error&Body=' + error.stack + '">email</a> (tamme-c@gmx.de): </br></br>'
     body.innerHTML += error.stack;
-    }
+  }
   return false;
 }
 /** layouts */
@@ -295,9 +295,11 @@ connectLayout.onRoomConnected = function() {
 var playingLayout = new layout('playing', 'website/layout_playing.html', lytCtr, function(par) {
   // init
   // html elements
-  this.canvasGame = document.getElementById('canvas_game');
+  this.divGame = document.getElementById('div_game');
   this.inputBack = document.getElementById('input_back');
   this.inputAgain = document.getElementById('input_again');
+  this.canvas = SVG("div_game")
+
   //site controls
   this.pageControls = par.pageControls;
   this.playerInfo = par.playerInfo;
@@ -340,17 +342,23 @@ playingLayout.resize = function() {
   var h_height_ver = height / 13;
   var h_hor = Math.min(h_width_hor, h_height_hor);
   var h_ver = Math.min(h_width_ver, h_height_ver);
+  console.log(width)
+  console.log(height);
 
   if (h_hor > h_ver) {
     //horizontal
     playingLayout.alignment = 'horizontal';
-    playingLayout.canvasGame.height = h_hor * 9;
-    playingLayout.canvasGame.width = h_hor * 13;
+    playingLayout.divGame.style.height = h_hor * 9 + "px";
+    playingLayout.canvas.height = h_hor * 9;
+    playingLayout.divGame.style.width = h_hor * 13 + "px";
+    playingLayout.canvas.width = h_hor * 13;
   } else {
     //vertical
     playingLayout.alignment = 'vertical';
-    playingLayout.canvasGame.height = h_ver * 13;
-    playingLayout.canvasGame.width = h_ver * 9;
+    playingLayout.divGame.style.height = h_ver * 13 + "px";
+    playingLayout.canvas.height = h_ver * 13;
+    playingLayout.divGame.style.width = h_ver * 9 + "px";
+    playingLayout.canvas.width = h_ver * 9;
   }
 }
 playingLayout.onButtonBack = function() {
@@ -364,7 +372,7 @@ playingLayout.initialized = function() {
 }
 playingLayout.redrawCanvas = function(game) {
   playingLayout.currentGame = game;
-  drawFieldtoCanvas(playingLayout.canvasGame, game, playingLayout.alignment);
+  drawFieldtoCanvas(playingLayout.canvas, game, playingLayout.alignment);
   if (game.activeplayer.name == playingLayout.playerInfo.name) {
     playingLayout.pageControls.updateStatusFunc('it\'s your turn');
   } else {
@@ -405,15 +413,15 @@ playingLayout.onGameInterrupt = function(interrupt) {
 }
 playingLayout.addGameControls = function() {
   document.addEventListener('keypress', playingLayout.onKeyPress, false);
-  playingLayout.canvasGame.addEventListener('touchstart', playingLayout.onTouchDown, false);
-  playingLayout.canvasGame.addEventListener('touchmove', playingLayout.onTouchMove, false);
-  playingLayout.canvasGame.addEventListener('touchend', playingLayout.onTouchUp, false);
+  playingLayout.divGame.addEventListener('touchstart', playingLayout.onTouchDown, false);
+  playingLayout.divGame.addEventListener('touchmove', playingLayout.onTouchMove, false);
+  playingLayout.divGame.addEventListener('touchend', playingLayout.onTouchUp, false);
 }
 playingLayout.removeGameControls = function() {
   document.removeEventListener('keypress', playingLayout.onKeyPress, false);
-  playingLayout.canvasGame.removeEventListener('touchstart', playingLayout.onTouchDown, false);
-  playingLayout.canvasGame.removeEventListener('touchmove', playingLayout.onTouchMove, false);
-  playingLayout.canvasGame.removeEventListener('touchend', playingLayout.onTouchUp, false);
+  playingLayout.divGame.removeEventListener('touchstart', playingLayout.onTouchDown, false);
+  playingLayout.divGame.removeEventListener('touchmove', playingLayout.onTouchMove, false);
+  playingLayout.divGame.removeEventListener('touchend', playingLayout.onTouchUp, false);
 }
 playingLayout.onGameInfo = function(info) {
   if (info.msg == messages.gameInfo.rst.again) {
@@ -463,7 +471,7 @@ playingLayout.onTouchUp = function(event) {
 }
 playingLayout.onResize = function() {
   console.log('onresize');
-  playingLayout.resize();
+  playingLayout.resize()
   if (playingLayout.currentGame) {
     playingLayout.redrawCanvas(playingLayout.currentGame);
   }
@@ -480,17 +488,17 @@ function updateTitle(text) {
   divTitle.innerHTML = text;
 }
 
-function showTitle(){
-  document.documentElement.style.setProperty('--title-height','40px');
-  document.documentElement.style.setProperty('--logo-height','30px');
+function showTitle() {
+  document.documentElement.style.setProperty('--title-height', '40px');
+  document.documentElement.style.setProperty('--logo-height', '30px');
   divTitle.hidden = false;
   divFooter.hidden = false;
   window.dispatchEvent(new Event('resize'));
 }
 
-function hideTitle(){
-  document.documentElement.style.setProperty('--title-height','0px');
-  document.documentElement.style.setProperty('--logo-height','0px');
+function hideTitle() {
+  document.documentElement.style.setProperty('--title-height', '0px');
+  document.documentElement.style.setProperty('--logo-height', '0px');
   divTitle.hidden = true;
   divFooter.hidden = true;
   window.dispatchEvent(new Event('resize'));
@@ -543,6 +551,145 @@ function toHex(value) {
 }
 
 function drawFieldtoCanvas(canvas, game, alignment) {
+  //canvas is svg
+  canvas.clear();
+  var h = 10;
+
+  var background = {
+    width: 1,
+    color: "#A9D0F5"
+  }
+  if (alignment == "vertical") {
+    for (var i = 0; i < 13; i++) {
+      canvas.line(0 + "%", (100 / 13 * i + 100 / 26) + "%", 100 + "%", (100 / 13 * i + 100 / 26) + "%").stroke(background);
+    }
+    for (var i = 0; i < 9; i++) {
+      canvas.line(100 / 9 * i + 100 / 18 + "%", 0 + "%", 100 / 9 * i + 100 / 18 + "%", 100 + "%").stroke(background);
+    }
+  } else {
+    for (var i = 0; i < 9; i++) {
+      canvas.line(0 + "%", (100 / 9 * i + 100 / 18) + "%", 100 + "%", (100 / 9 * i + 100 / 18) + "%").stroke(background);
+    }
+    for (var i = 0; i < 13; i++) {
+      canvas.line(100 / 13 * i + 100 / 26 + "%", 0 + "%", 100 / 13 * i + 100 / 26 + "%", 100 + "%").stroke(background);
+    }
+  }
+  //draw border
+  noCorner = getPosition(11, 8, alignment, canvas)
+  nwCorner = getPosition(1, 8, alignment, canvas)
+  soCorner = getPosition(11, 0, alignment, canvas)
+  swCorner = getPosition(1, 0, alignment, canvas)
+  g1no = getPosition(1, 5, alignment, canvas)
+  g1nw = getPosition(0, 5, alignment, canvas)
+  g1so = getPosition(1, 3, alignment, canvas)
+  g1sw = getPosition(0, 3, alignment, canvas)
+  g2no = getPosition(12, 5, alignment, canvas)
+  g2nw = getPosition(11, 5, alignment, canvas)
+  g2so = getPosition(12, 3, alignment, canvas)
+  g2sw = getPosition(11, 3, alignment, canvas)
+  border = {
+    width: 2,
+    color: "#000000"
+  }
+  player1 = {
+    width: 2,
+    color: game.player.player0.color
+  }
+  player2 = {
+    width: 2,
+    color: game.player.player1.color
+  }
+  drawLine(nwCorner, noCorner, canvas, border)
+  drawLine(swCorner, soCorner, canvas, border)
+  drawLine(nwCorner, g1no, canvas, border)
+  drawLine(swCorner, g1so, canvas, border)
+  drawLine(noCorner, g2nw, canvas, border)
+  drawLine(soCorner, g2sw, canvas, border)
+  drawLine(g1no, g1nw, canvas, player1)
+  drawLine(g1nw, g1sw, canvas, player1)
+  drawLine(g1sw, g1so, canvas, player1)
+  drawLine(g2nw, g2no, canvas, player2)
+  drawLine(g2no, g2so, canvas, player2)
+  drawLine(g2so, g2sw, canvas, player2)
+
+  for (var i = 0; i < game.shoots.length - 1; i++) {
+    var shoot = game.shoots[i];
+    posA = getPosition(shoot.a.x, shoot.a.y, alignment, canvas)
+    posB = getPosition(shoot.b.x, shoot.b.y, alignment, canvas)
+    style = {
+      width: 2,
+      color: shoot.p
+    }
+    drawLine(posA, posB, canvas, style);
+  }
+  if (game.shoots.length > 0) {
+    var shoot = game.shoots[game.shoots.length - 1]
+    posA = getPosition(shoot.a.x, shoot.a.y, alignment, canvas)
+    posB = getPosition(shoot.b.x, shoot.b.y, alignment, canvas)
+    style = {
+      width: 2,
+      color: shoot.p
+    }
+    ballPos = getPosition(game.ball.x, game.ball.y, alignment, canvas);
+    if (shoot.b.x == game.ball.x && shoot.b.y == game.ball.y) {
+      drawLine(posA, posA, canvas, style).animate({
+        ease: "<>",
+        duration: 200
+      }).attr({
+        x2: posB.x,
+        y2: posB.y
+      });
+      ball = canvas.polygon("1,0 0.707,0.707 0,1 -0.707,0.707 -1,0 -0.707,-0.707 0,-1 0.707,-0.707").size(15, 15).fill({
+        color: "#000000"
+      }).center(posA.x, posA.y).animate({
+        ease: "<>",
+        duration: 200
+      }).center(ballPos.x, ballPos.y);
+    } else {
+      drawLine(posB, posB, canvas, style).animate({
+        ease: "<>",
+        duration: 200
+      }).attr({
+        x2: posA.x,
+        y2: posA.y
+      });
+      ball = canvas.polygon("1,0 0.707,0.707 0,1 -0.707,0.707 -1,0 -0.707,-0.707 0,-1 0.707,-0.707").size(15, 15).fill({
+        color: "#000000"
+      }).center(posB.x, posB.y).animate({
+        ease: "<>",
+        duration: 200
+      }).center(ballPos.x, ballPos.y);
+    }
+  } else {
+    ballPos = getPosition(game.ball.x, game.ball.y, alignment, canvas);
+    ball = canvas.polygon("1,0 0.707,0.707 0,1 -0.707,0.707 -1,0 -0.707,-0.707 0,-1 0.707,-0.707").size(15, 15).fill({
+      color: "#000000"
+    }).center(ballPos.x, ballPos.y);
+  }
+}
+
+function drawLine(pointA, pointB, canvas, border) {
+  return canvas.line(pointA.x, pointA.y, pointB.x, pointB.y).stroke(border);
+}
+
+function getPosition(i, j, alignment, canvas) {
+  console.log(canvas.height)
+  console.log(canvas.width);
+  if (alignment == "vertical") {
+    x = (1 / 9 * j + 1 / 18)*canvas.width
+    y = (1-(1 / 13 * i + 1 / 26))*canvas.height
+  } else {
+    x = (1 / 13 * i + 1 / 26)*canvas.width
+    y = (1 / 9 * j + 1 / 18)*canvas.height
+  }
+  return {
+    x: x,
+    y: y
+  }
+}
+
+
+function drawFieldtoCanvas_OLD(canvas, game, alignment) {
   var context = canvas.getContext("2d");
   context.save();
   var width = canvas.width;

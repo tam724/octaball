@@ -108,6 +108,7 @@ function Game(player0, player1) {
     if (this.activeplayer == player && shootResult.msg == 'OK' && !this.winner) {
       // actual shooting
       this.ball.point[direction].player = player;
+      this.occpShoots.push(this.ball.point[direction]);
       this.ball.point = this.ball.point[direction].getOtherPoint(this.ball.point);
       //check for winner
       this.testWinner();
@@ -157,20 +158,18 @@ function Game(player0, player1) {
       },
       activeplayer: this.activeplayer
     };
-    for (var i = 0; i < this.shoots.length; i++) {
-      if (this.shoots[i].player) {
-        pkg.shoots.push({
-          a: {
-            x: this.shoots[i].a.x,
-            y: this.shoots[i].a.y
-          },
-          b: {
-            x: this.shoots[i].b.x,
-            y: this.shoots[i].b.y
-          },
-          p: this.shoots[i].player.color
-        });
-      }
+    for (var i = 0; i < this.occpShoots.length; i++) {
+      pkg.shoots.push({
+        a: {
+          x: this.occpShoots[i].a.x,
+          y: this.occpShoots[i].a.y
+        },
+        b: {
+          x: this.occpShoots[i].b.x,
+          y: this.occpShoots[i].b.y
+        },
+        p: this.occpShoots[i].player.color
+      });
     }
     return pkg;
   }
@@ -180,6 +179,7 @@ function Game(player0, player1) {
   this.activeplayer = player0;
   this.points = this.initPoints();
   this.shoots = this.initShoots();
+  this.occpShoots = []
   this.ball = new Ball(this.points[6][4]);
 }
 
