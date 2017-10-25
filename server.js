@@ -2,8 +2,7 @@ var express = require('express');
 var app = express();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
-var Game = require('./game/game');
-var Player = require('./game/player');
+var Octaball = require('./game/octaball');
 var MsgClass = require('./website/messages.js');
 var Messages = new MsgClass();
 
@@ -32,7 +31,7 @@ function makeRandomGameString(length) {
 }
 
 function startNewGame(gameString) {
-  games[gameString].game = new Game(games[gameString].player0, games[gameString].player1);
+  games[gameString].game = new Octaball.Game(games[gameString].player0, games[gameString].player1);
   games[gameString].io.emit(Messages.gameUpdate.rsp, games[gameString].game.getForSending());
   games[gameString].io.emit(Messages.gameInterrupt.rsp, {
     msg: Messages.gameInterrupt.rst.gameStart
@@ -43,8 +42,8 @@ function createNewGame() {
   var gameString = makeRandomGameString(5);
   console.log('Creating new game.. ' + gameString);
   games[gameString] = {
-    player0: new Player(),
-    player1: new Player(),
+    player0: new Octaball.Player(),
+    player1: new Octaball.Player(),
     game: null
   };
   games[gameString].io = io.of('/' + gameString);
