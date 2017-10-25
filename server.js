@@ -1,10 +1,10 @@
-var express = require('express');
-var app = express();
-var http = require('http').Server(app);
-var io = require('socket.io')(http);
-var Octaball = require('./game/octaball');
-var MsgClass = require('./website/messages.js');
-var Messages = new MsgClass();
+let express = require('express');
+let app = express();
+let http = require('http').Server(app);
+let io = require('socket.io')(http);
+let Octaball = require('./game/octaball');
+let MsgClass = require('./website/messages.js');
+let Messages = new MsgClass();
 
 /** http server */
 app.use('/', express.static('./'));
@@ -16,13 +16,14 @@ http.listen(8080, function() {
 
 /** game creation
 /** game handling */
-var games = {};
+let games = {};
 
 function makeRandomGameString(length) {
+  let gameString;
   do {
-    var gameString = "";
-    var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    for (var i = 0; i < length; i++) {
+    gameString = "";
+    let possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    for (let i = 0; i < length; i++) {
       gameString += possible.charAt(Math.floor(Math.random() * possible.length));
     }
   }
@@ -31,7 +32,12 @@ function makeRandomGameString(length) {
 }
 
 function startNewGame(gameString) {
-  games[gameString].game = new Octaball.Game(games[gameString].player0, games[gameString].player1);
+  if(games[gameString].game && games[gameString].game.winner){
+    games[gameString].game = new Octaball.Game(games[gameString].player0, games[gameString].player1, games[gameString].game.getOtherPlayer(games[gameString].game.winner));
+  }
+  else{
+    games[gameString].game = new Octaball.Game(games[gameString].player0, games[gameString].player1, null);
+  }
   games[gameString].io.emit(Messages.gameUpdate.rsp, games[gameString].game.getForSending());
   games[gameString].io.emit(Messages.gameInterrupt.rsp, {
     msg: Messages.gameInterrupt.rst.gameStart
@@ -39,7 +45,7 @@ function startNewGame(gameString) {
 }
 
 function createNewGame() {
-  var gameString = makeRandomGameString(5);
+  let gameString = makeRandomGameString(5);
   console.log('Creating new game.. ' + gameString);
   games[gameString] = {
     player0: new Octaball.Player(),
@@ -49,7 +55,7 @@ function createNewGame() {
   games[gameString].io = io.of('/' + gameString);
   games[gameString].io.on('connection', function(socket) {
     //a new player wants to connect and initialize
-    var player = null;
+    let player = null;
     if (!games[gameString].player0.connected) {
       //if there is no player0 connected, connect this player to player0
       player = games[gameString].player0;
@@ -60,7 +66,7 @@ function createNewGame() {
       player.connected = true;
     } else {
       //else there are already two player in this game
-      socket.emit(emits.octaballError, 'game is already full');
+      socket.emit( Messages.octaballError, 'game is already full');
     }
 
     if (games[gameString].player0.connected && games[gameString].player1.connected) {
@@ -100,7 +106,7 @@ function createNewGame() {
     socket.on(Messages.shoot.msg, function(direction) {
       console.log(gameString + ': ' + player.name + ' trying to shoot in ' + direction);
       if (games[gameString] && games[gameString].game) {
-        var shootResult = games[gameString].game.tryShoot(direction, player);
+        let shootResult = games[gameString].game.tryShoot(direction, player);
         if (shootResult.msg == 'OK') {
           //alright shoot done
           socket.emit(Messages.shoot.rsp, Messages.shoot.rst.ok);
@@ -164,7 +170,7 @@ function deleteGame(gameString){
 io.on('connection', function(socket) {
   console.log('a user connected');
   socket.on(Messages.createID.msg, function() {
-    var gameID = createNewGame();
+    let gameID = createNewGame();
     //telling the user the new game string
     socket.emit(Messages.createID.rsp, gameID);
   });
