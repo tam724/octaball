@@ -324,7 +324,7 @@ var playingLayout = new layout('playing', 'website/layout_playing.html', lytCtr,
   playingLayout.inputAgain.hidden = true;
   this.pageControls.hideTitleFunc();
   this.resize();
-  playingLayout.gameConnection.initializePlayer(playingLayout.playerInfo, playingLayout.initialized, playingLayout.redrawCanvas, playingLayout.shootResponse, playingLayout.onGameInterrupt, playingLayout.onGameInfo, this.gameType);
+  playingLayout.gameConnection.initializePlayer(playingLayout.playerInfo, playingLayout.initialized, function(game){playingLayout.redrawCanvas(game, false, true)}, playingLayout.shootResponse, playingLayout.onGameInterrupt, playingLayout.onGameInfo, this.gameType);
 }, function() {
   //dest
   this.gameConnection.disconnect();
@@ -368,9 +368,12 @@ playingLayout.onButtonBack = function() {
 playingLayout.initialized = function() {
   playingLayout.pageControls.updateStatusFunc('waiting for other player');
 }
-playingLayout.redrawCanvas = function(game) {
+playingLayout.redrawCanvas = function(game, updateBackgroud, animate) {
   playingLayout.currentGame = game;
-  drawFieldtoCanvas(playingLayout.canvas, game, playingLayout.alignment);
+  if(updateBackgroud){
+    drawBackgroundtoCanvas(playingLayout.canvas, game, playingLayout.alignment);
+  }
+  drawFieldtoCanvas(playingLayout.canvas, game, playingLayout.alignment, animate);
   if (game.activeplayer.name == playingLayout.playerInfo.name) {
     playingLayout.pageControls.updateStatusFunc('it\'s your turn');
   } else {
@@ -470,7 +473,7 @@ playingLayout.onTouchUp = function(event) {
 playingLayout.onResize = function() {
   playingLayout.resize()
   if (playingLayout.currentGame) {
-    playingLayout.redrawCanvas(playingLayout.currentGame);
+    playingLayout.redrawCanvas(playingLayout.currentGame, true, false);
   }
 }
 
@@ -547,28 +550,33 @@ function toHex(value) {
   return hex;
 }
 
-function drawFieldtoCanvas(canvas, game, alignment) {
-  //canvas is svg
-  canvas.clear();
-  var h = 10;
+let backgroundelements = [];
+let foregroundelements = [];
 
+function drawBackgroundtoCanvas(canvas, game, alignment) {
+  var h = 10;
+  backgroundelements = clearElements(backgroundelements);
   var background = {
     width: 1,
     color: "#A9D0F5"
   }
   if (alignment == "vertical") {
     for (var i = 0; i < 13; i++) {
-      canvas.line(0 + "%", (100 / 13 * i + 100 / 26) + "%", 100 + "%", (100 / 13 * i + 100 / 26) + "%").stroke(background);
+      backgroundelements.push(
+        canvas.line(0 + "%", (100 / 13 * i + 100 / 26) + "%", 100 + "%", (100 / 13 * i + 100 / 26) + "%").stroke(background));
     }
     for (var i = 0; i < 9; i++) {
-      canvas.line(100 / 9 * i + 100 / 18 + "%", 0 + "%", 100 / 9 * i + 100 / 18 + "%", 100 + "%").stroke(background);
+      backgroundelements.push(
+        canvas.line(100 / 9 * i + 100 / 18 + "%", 0 + "%", 100 / 9 * i + 100 / 18 + "%", 100 + "%").stroke(background));
     }
   } else {
     for (var i = 0; i < 9; i++) {
-      canvas.line(0 + "%", (100 / 9 * i + 100 / 18) + "%", 100 + "%", (100 / 9 * i + 100 / 18) + "%").stroke(background);
+      backgroundelements.push(
+        canvas.line(0 + "%", (100 / 9 * i + 100 / 18) + "%", 100 + "%", (100 / 9 * i + 100 / 18) + "%").stroke(background));
     }
     for (var i = 0; i < 13; i++) {
-      canvas.line(100 / 13 * i + 100 / 26 + "%", 0 + "%", 100 / 13 * i + 100 / 26 + "%", 100 + "%").stroke(background);
+      backgroundelements.push(
+        canvas.line(100 / 13 * i + 100 / 26 + "%", 0 + "%", 100 / 13 * i + 100 / 26 + "%", 100 + "%").stroke(background));
     }
   }
   //draw border
@@ -596,20 +604,37 @@ function drawFieldtoCanvas(canvas, game, alignment) {
     width: 2,
     color: game.player.player1.color
   }
-  drawLine(nwCorner, noCorner, canvas, border)
-  drawLine(swCorner, soCorner, canvas, border)
-  drawLine(nwCorner, g1no, canvas, border)
-  drawLine(swCorner, g1so, canvas, border)
-  drawLine(noCorner, g2nw, canvas, border)
-  drawLine(soCorner, g2sw, canvas, border)
-  drawLine(g1no, g1nw, canvas, player1)
-  drawLine(g1nw, g1sw, canvas, player1)
-  drawLine(g1sw, g1so, canvas, player1)
-  drawLine(g2nw, g2no, canvas, player2)
-  drawLine(g2no, g2so, canvas, player2)
-  drawLine(g2so, g2sw, canvas, player2)
+  backgroundelements.push(drawLine(nwCorner, noCorner, canvas, border));
+  backgroundelements.push(drawLine(swCorner, soCorner, canvas, border));
+  backgroundelements.push(drawLine(nwCorner, g1no, canvas, border));
+  backgroundelements.push(drawLine(swCorner, g1so, canvas, border));
+  backgroundelements.push(drawLine(noCorner, g2nw, canvas, border));
+  backgroundelements.push(drawLine(soCorner, g2sw, canvas, border));
+  backgroundelements.push(drawLine(g1no, g1nw, canvas, player1));
+  backgroundelements.push(drawLine(g1nw, g1sw, canvas, player1));
+  backgroundelements.push(drawLine(g1sw, g1so, canvas, player1));
+  backgroundelements.push(drawLine(g2nw, g2no, canvas, player2));
+  backgroundelements.push(drawLine(g2no, g2so, canvas, player2));
+  backgroundelements.push(drawLine(g2so, g2sw, canvas, player2));
+}
 
-  for (var i = 0; i < game.shoots.length - 1; i++) {
+function clearElements(elements) {
+  for (let i = 0; i < elements.length; i++) {
+    console.log(elements[i])
+    elements[i].remove();
+  }
+  return [];
+}
+
+function drawFieldtoCanvas(canvas, game, alignment, animate) {
+  var h = 10;
+  foregroundelements = clearElements(foregroundelements);
+  var background = {
+    width: 1,
+    color: "#A9D0F5"
+  }
+  let finish = animate ? game.shoots.length - 1: game.shoots.length
+  for (var i = 0; i < finish; i++) {
     var shoot = game.shoots[i];
     posA = getPosition(shoot.a.x, shoot.a.y, alignment, canvas)
     posB = getPosition(shoot.b.x, shoot.b.y, alignment, canvas)
@@ -617,9 +642,9 @@ function drawFieldtoCanvas(canvas, game, alignment) {
       width: 2,
       color: shoot.p
     }
-    drawLine(posA, posB, canvas, style);
+    foregroundelements.push(drawLine(posA, posB, canvas, style));
   }
-  if (game.shoots.length > 0) {
+  if (game.shoots.length > 0 && animate) {
     var shoot = game.shoots[game.shoots.length - 1]
     posA = getPosition(shoot.a.x, shoot.a.y, alignment, canvas)
     posB = getPosition(shoot.b.x, shoot.b.y, alignment, canvas)
@@ -629,33 +654,41 @@ function drawFieldtoCanvas(canvas, game, alignment) {
     }
     ballPos = getPosition(game.ball.x, game.ball.y, alignment, canvas);
     if (shoot.b.x == game.ball.x && shoot.b.y == game.ball.y) {
-      drawLine(posA, posA, canvas, style).animate({
+      let line = drawLine(posA, posA, canvas, style);
+      line.animate({
         ease: "<>",
         duration: 200
       }).attr({
         x2: posB.x,
         y2: posB.y
       });
-      drawBall(posA, canvas, game.activeplayer.color).animate({
+      foregroundelements.push(line)
+      let ball = drawBall(posA, canvas, game.activeplayer.color);
+      ball.animate({
         ease: "<>",
         duration: 200
       }).center(ballPos.x, ballPos.y);
+      foregroundelements.push(ball);
     } else {
-      drawLine(posB, posB, canvas, style).animate({
+      let line = drawLine(posB, posB, canvas, style);
+      line.animate({
         ease: "<>",
         duration: 200
       }).attr({
         x2: posA.x,
         y2: posA.y
       });
-      drawBall(posB, canvas, game.activeplayer.color).animate({
+      foregroundelements.push(line);
+      let ball = drawBall(posB, canvas, game.activeplayer.color);
+      ball.animate({
         ease: "<>",
         duration: 200
-      }).center(ballPos.x,ballPos.y);
+      }).center(ballPos.x, ballPos.y);
+      foregroundelements.push(ball);
     }
   } else {
     ballPos = getPosition(game.ball.x, game.ball.y, alignment, canvas);
-    drawBall(ballPos, canvas, game.activeplayer.color)
+    foregroundelements.push(drawBall(ballPos, canvas, game.activeplayer.color));
   }
 }
 
@@ -681,103 +714,6 @@ function getPosition(i, j, alignment, canvas) {
     x: x,
     y: y
   }
-}
-
-
-function drawFieldtoCanvas_OLD(canvas, game, alignment) {
-  var context = canvas.getContext("2d");
-  context.save();
-  var width = canvas.width;
-  var height = canvas.height;
-  var h = 0;
-
-  if (alignment == 'horizontal') {
-    h = width / 13;
-  } else {
-    h = width / 9;
-  }
-
-  context.clearRect(0, 0, width, height);
-
-  //quadrillpaper
-  context.beginPath()
-  if (alignment == 'vertical') {
-    context.translate(width / 2, height / 2);
-    context.rotate(-Math.PI / 2);
-    context.translate(-height / 2, -width / 2);
-
-  }
-  for (var i = 0; i < 13; i++) {
-    context.moveTo(i * h + h / 2, 0);
-    context.lineTo(i * h + h / 2, Math.max(width, height));
-  }
-  for (var i = 0; i < 9; i++) {
-    context.moveTo(0, i * h + h / 2);
-    context.lineTo(Math.max(width, height), i * h + h / 2);
-  }
-  context.strokeStyle = '#A9D0F5';
-  context.lineWidth = 1;
-  context.stroke();
-
-  //border
-  context.beginPath();
-  context.moveTo(1 * h + h / 2, 3 * h + h / 2);
-  context.lineTo(1 * h + h / 2, 0 * h + h / 2);
-  context.lineTo(11 * h + h / 2, 0 * h + h / 2);
-  context.lineTo(11 * h + h / 2, 3 * h + h / 2);
-
-  context.moveTo(11 * h + h / 2, 5 * h + h / 2);
-  context.lineTo(11 * h + h / 2, 8 * h + h / 2);
-  context.lineTo(1 * h + h / 2, 8 * h + h / 2);
-  context.lineTo(1 * h + h / 2, 5 * h + h / 2);
-
-  context.strokeStyle = '#000000';
-  context.lineWidth = 2;
-  context.stroke();
-
-  context.beginPath();
-  context.moveTo(1 * h + h / 2, 3 * h + h / 2);
-  context.lineTo(0 * h + h / 2, 3 * h + h / 2);
-  context.lineTo(0 * h + h / 2, 5 * h + h / 2);
-  context.lineTo(1 * h + h / 2, 5 * h + h / 2);
-
-  context.strokeStyle = game.player.player0.color;
-  context.stroke();
-
-  context.beginPath();
-  context.moveTo(11 * h + h / 2, 3 * h + h / 2);
-  context.lineTo(12 * h + h / 2, 3 * h + h / 2);
-  context.lineTo(12 * h + h / 2, 5 * h + h / 2);
-  context.lineTo(11 * h + h / 2, 5 * h + h / 2);
-
-  context.strokeStyle = game.player.player1.color;
-  context.stroke();
-
-  for (var i = 0; i < game.shoots.length; i++) {
-    var shoot = game.shoots[i];
-    var pointA = {
-      x: shoot.a.x * h + h / 2,
-      y: shoot.a.y * h + h / 2
-    };
-    var pointB = {
-      x: shoot.b.x * h + h / 2,
-      y: shoot.b.y * h + h / 2
-    };
-    context.beginPath();
-    context.moveTo(pointA.x, pointA.y, 5, 5);
-    context.lineTo(pointB.x, pointB.y, 5, 5);
-    context.strokeStyle = shoot.p;
-    context.lineWidth = 3;
-    context.stroke();
-  }
-
-  context.beginPath();
-  context.strokeStyle = game.activeplayer.color;
-  context.rect(game.ball.x * h + h / 2 - 5, game.ball.y * h + h / 2 - 5, 10, 10);
-  context.stroke();
-
-  context.strokeStyle = '#000000';
-  context.restore();
 }
 
 function getDirectionfromKey(key, alignment) {
