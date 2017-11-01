@@ -263,7 +263,7 @@ class ConnectLayout extends Layout {
     if (gameID && gameID != '' && gameID.length == 5) {
       this.inputGameId.readonly = true;
       this.divLoader.hidden = false;
-      this.gameConnection.checkID(gameID, (res) =>this.onCheckResult(res));
+      this.gameConnection.checkID(gameID, (res) => this.onCheckResult(res));
     } else {
       this.pageControls.updateStatusFunc('input a game id');
     }
@@ -272,7 +272,7 @@ class ConnectLayout extends Layout {
     if (result == messages.checkID.rst.ok) {
       this.divLoader.hidden = true;
       this.pageControls.updateStatusFunc('connecting to game');
-      this.gameConnection.connectToRoom(this.inputGameId.value, () => this.onConnectedToRoom(), () =>this.onRoomConnected());
+      this.gameConnection.connectToRoom(this.inputGameId.value, () => this.onConnectedToRoom(), () => this.onRoomConnected());
     } else if (result == messages.checkID.rst.error) {
       this.inputGameId.readOnly = false;
       this.divLoader.hidden = true;
@@ -302,7 +302,9 @@ class PlayingLayout extends Layout {
     this.divGame = document.getElementById('div_game');
     this.inputBack = document.getElementById('input_back');
     this.inputAgain = document.getElementById('input_again');
-    this.canvas = SVG("div_game")
+    this.canvas = SVG("div_game");
+    this.canvas.viewbox(0, 0, 130, 90);
+
 
     //site controls
     this.pageControls = par.pageControls;
@@ -327,39 +329,13 @@ class PlayingLayout extends Layout {
     //initialize site
     this.inputAgain.hidden = true;
     this.pageControls.hideTitleFunc();
-    this.resize();
+    this.onResize();
     this.gameConnection.initializePlayer(this.playerInfo, () => this.initialized(), (game) => this.redrawCanvas(game, false, true), (resp) => this.shootResponse(resp), (interr) => this.onGameInterrupt(interr), (info) => this.onGameInfo(info), this.gameType);
   }
   dest() {
     this.gameConnection.disconnect();
     this.pageControls.showTitleFunc();
     this.removeGameControls();
-  }
-  resize() {
-    let width = document.getElementById('div_parent').clientWidth;
-    let height = document.getElementById('div_parent').clientHeight - 50;
-    let h_width_hor = width / 13;
-    let h_height_hor = height / 9;
-    let h_width_ver = width / 9;
-    let h_height_ver = height / 13;
-    let h_hor = Math.min(h_width_hor, h_height_hor);
-    let h_ver = Math.min(h_width_ver, h_height_ver);
-
-    if (h_hor > h_ver) {
-      //horizontal
-      this.alignment = 'horizontal';
-      this.divGame.style.height = h_hor * 9 + "px";
-      this.canvas.height = h_hor * 9;
-      this.divGame.style.width = h_hor * 13 + "px";
-      this.canvas.width = h_hor * 13;
-    } else {
-      //vertical
-      this.alignment = 'vertical';
-      this.divGame.style.height = h_ver * 13 + "px";
-      this.canvas.height = h_ver * 13;
-      this.divGame.style.width = h_ver * 9 + "px";
-      this.canvas.width = h_ver * 9;
-    }
   }
   onButtonBack() {
     this.layoutController.changeLayout(mainLayout.name, {
@@ -373,9 +349,9 @@ class PlayingLayout extends Layout {
   redrawCanvas(game, updateBackgroud, animate) {
     this.currentGame = game;
     if (updateBackgroud) {
-      drawBackgroundtoCanvas(this.canvas, game, this.alignment);
+      drawBackgroundtoCanvas(this.canvas, game);
     }
-    drawFieldtoCanvas(this.canvas, game, this.alignment, animate);
+    drawFieldtoCanvas(this.canvas, game, animate);
     if (game.activeplayer.name == this.playerInfo.name) {
       this.pageControls.updateStatusFunc('it\'s your turn');
     } else {
@@ -398,6 +374,7 @@ class PlayingLayout extends Layout {
   onGameInterrupt(interrupt) {
     if (interrupt.msg == messages.gameInterrupt.rst.gameStart) {
       this.addGameControls();
+      drawBackgroundtoCanvas(this.canvas);
       this.inputAgain.hidden = true;
     } else if (interrupt.msg == messages.gameInterrupt.rst.gameEnd) {
       if (interrupt.data == 'disconnect') {
@@ -472,9 +449,21 @@ class PlayingLayout extends Layout {
     this.touchStartPos = null;
   }
   onResize() {
-    this.resize()
-    if (this.currentGame) {
-      this.redrawCanvas(this.currentGame, true, false);
+    let width = document.getElementById('div_parent').clientWidth - 5;
+    let height = document.getElementById('div_parent').clientHeight - 55;
+    let h_hor = Math.min(width / 13, height / 9);
+    let h_ver = Math.min(width / 9, height / 13);
+    this.divGame.style.width = width;
+    this.divGame.style.height = height;
+    this.canvas.size(width, height);
+    if (h_hor > h_ver) {
+      this.alignment = 'horizontal';
+      this.canvas.rotate(0, 0, 0);
+      this.canvas.scale(1, 0, 0);
+    } else {
+      this.alignment = 'vertical';
+      this.canvas.rotate(-90, 0, 0);
+      this.canvas.scale(h_ver/(10*this.canvas.viewbox().zoom), 0, 0)
     }
   }
 }
@@ -551,84 +540,67 @@ function toHex(value) {
   return hex;
 }
 
-let backgroundelements = [];
 let foregroundelements = [];
 
-function drawBackgroundtoCanvas(canvas, game, alignment) {
+function drawBackgroundtoCanvas(canvas) {
   let h = 10;
-  backgroundelements = clearElements(backgroundelements);
   let background = {
-    width: 1,
+    width: 0.2,
     color: "#A9D0F5"
   }
-  if (alignment == "vertical") {
-    for (let i = 0; i < 13; i++) {
-      backgroundelements.push(
-        canvas.line(0 + "%", (100 / 13 * i + 100 / 26) + "%", 100 + "%", (100 / 13 * i + 100 / 26) + "%").stroke(background));
-    }
-    for (let i = 0; i < 9; i++) {
-      backgroundelements.push(
-        canvas.line(100 / 9 * i + 100 / 18 + "%", 0 + "%", 100 / 9 * i + 100 / 18 + "%", 100 + "%").stroke(background));
-    }
-  } else {
-    for (let i = 0; i < 9; i++) {
-      backgroundelements.push(
-        canvas.line(0 + "%", (100 / 9 * i + 100 / 18) + "%", 100 + "%", (100 / 9 * i + 100 / 18) + "%").stroke(background));
-    }
-    for (let i = 0; i < 13; i++) {
-      backgroundelements.push(
-        canvas.line(100 / 13 * i + 100 / 26 + "%", 0 + "%", 100 / 13 * i + 100 / 26 + "%", 100 + "%").stroke(background));
-    }
+  for (let i = 0; i < 9; i++) {
+    canvas.line(0, 10 * i + 5, 130, 10 * i + 5).stroke(background);
+  }
+  for (let i = 0; i < 13; i++) {
+    canvas.line(10 * i + 5, 0, 10 * i + 5, 90).stroke(background);
   }
   //draw border
-  let noCorner = getPosition(11, 8, alignment, canvas)
-  let nwCorner = getPosition(1, 8, alignment, canvas)
-  let soCorner = getPosition(11, 0, alignment, canvas)
-  let swCorner = getPosition(1, 0, alignment, canvas)
-  let g1no = getPosition(1, 5, alignment, canvas)
-  let g1nw = getPosition(0, 5, alignment, canvas)
-  let g1so = getPosition(1, 3, alignment, canvas)
-  let g1sw = getPosition(0, 3, alignment, canvas)
-  let g2no = getPosition(12, 5, alignment, canvas)
-  let g2nw = getPosition(11, 5, alignment, canvas)
-  let g2so = getPosition(12, 3, alignment, canvas)
-  let g2sw = getPosition(11, 3, alignment, canvas)
+  let noCorner = getPosition(11, 8)
+  let nwCorner = getPosition(1, 8)
+  let soCorner = getPosition(11, 0)
+  let swCorner = getPosition(1, 0)
+  let g1no = getPosition(1, 5)
+  let g1nw = getPosition(0, 5)
+  let g1so = getPosition(1, 3)
+  let g1sw = getPosition(0, 3)
+  let g2no = getPosition(12, 5)
+  let g2nw = getPosition(11, 5)
+  let g2so = getPosition(12, 3)
+  let g2sw = getPosition(11, 3)
   let border = {
     width: 2,
     color: "#000000"
   }
   let player1 = {
     width: 2,
-    color: game.player.player0.color
+    color: "#FF0000"
   }
   let player2 = {
     width: 2,
-    color: game.player.player1.color
+    color: "#00FF00"
   }
-  backgroundelements.push(drawLine(nwCorner, noCorner, canvas, border));
-  backgroundelements.push(drawLine(swCorner, soCorner, canvas, border));
-  backgroundelements.push(drawLine(nwCorner, g1no, canvas, border));
-  backgroundelements.push(drawLine(swCorner, g1so, canvas, border));
-  backgroundelements.push(drawLine(noCorner, g2nw, canvas, border));
-  backgroundelements.push(drawLine(soCorner, g2sw, canvas, border));
-  backgroundelements.push(drawLine(g1no, g1nw, canvas, player1));
-  backgroundelements.push(drawLine(g1nw, g1sw, canvas, player1));
-  backgroundelements.push(drawLine(g1sw, g1so, canvas, player1));
-  backgroundelements.push(drawLine(g2nw, g2no, canvas, player2));
-  backgroundelements.push(drawLine(g2no, g2so, canvas, player2));
-  backgroundelements.push(drawLine(g2so, g2sw, canvas, player2));
+  drawLine(nwCorner, noCorner, canvas, border);
+  drawLine(swCorner, soCorner, canvas, border);
+  drawLine(nwCorner, g1no, canvas, border);
+  drawLine(swCorner, g1so, canvas, border);
+  drawLine(noCorner, g2nw, canvas, border);
+  drawLine(soCorner, g2sw, canvas, border);
+  drawLine(g1no, g1nw, canvas, player1);
+  drawLine(g1nw, g1sw, canvas, player1);
+  drawLine(g1sw, g1so, canvas, player1);
+  drawLine(g2nw, g2no, canvas, player2);
+  drawLine(g2no, g2so, canvas, player2);
+  drawLine(g2so, g2sw, canvas, player2);
 }
 
 function clearElements(elements) {
   for (let i = 0; i < elements.length; i++) {
-    console.log(elements[i])
     elements[i].remove();
   }
   return [];
 }
 
-function drawFieldtoCanvas(canvas, game, alignment, animate) {
-  let h = 10;
+function drawFieldtoCanvas(canvas, game, animate) {
   foregroundelements = clearElements(foregroundelements);
   let background = {
     width: 1,
@@ -637,8 +609,8 @@ function drawFieldtoCanvas(canvas, game, alignment, animate) {
   let finish = animate ? game.shoots.length - 1 : game.shoots.length
   for (let i = 0; i < finish; i++) {
     let shoot = game.shoots[i];
-    let posA = getPosition(shoot.a.x, shoot.a.y, alignment, canvas)
-    let posB = getPosition(shoot.b.x, shoot.b.y, alignment, canvas)
+    let posA = getPosition(shoot.a.x, shoot.a.y)
+    let posB = getPosition(shoot.b.x, shoot.b.y)
     let style = {
       width: 2,
       color: shoot.p
@@ -647,13 +619,13 @@ function drawFieldtoCanvas(canvas, game, alignment, animate) {
   }
   if (game.shoots.length > 0 && animate) {
     let shoot = game.shoots[game.shoots.length - 1]
-    let posA = getPosition(shoot.a.x, shoot.a.y, alignment, canvas)
-    let posB = getPosition(shoot.b.x, shoot.b.y, alignment, canvas)
+    let posA = getPosition(shoot.a.x, shoot.a.y)
+    let posB = getPosition(shoot.b.x, shoot.b.y)
     let style = {
       width: 2,
       color: shoot.p
     }
-    let ballPos = getPosition(game.ball.x, game.ball.y, alignment, canvas);
+    let ballPos = getPosition(game.ball.x, game.ball.y);
     if (shoot.b.x == game.ball.x && shoot.b.y == game.ball.y) {
       let line = drawLine(posA, posA, canvas, style);
       line.animate({
@@ -688,13 +660,13 @@ function drawFieldtoCanvas(canvas, game, alignment, animate) {
       foregroundelements.push(ball);
     }
   } else {
-    let ballPos = getPosition(game.ball.x, game.ball.y, alignment, canvas);
+    let ballPos = getPosition(game.ball.x, game.ball.y);
     foregroundelements.push(drawBall(ballPos, canvas, game.activeplayer.color));
   }
 }
 
 function drawBall(point, canvas, color) {
-  return canvas.polygon("1,0 0.707,0.707 0,1 -0.707,0.707 -1,0 -0.707,-0.707 0,-1 0.707,-0.707 1,0").size(15, 15).fill({
+  return canvas.polygon("1,0 0.707,0.707 0,1 -0.707,0.707 -1,0 -0.707,-0.707 0,-1 0.707,-0.707 1,0").size(2, 2).fill({
     color: color
   }).center(point.x, point.y);
 }
@@ -703,19 +675,10 @@ function drawLine(pointA, pointB, canvas, border) {
   return canvas.line(pointA.x, pointA.y, pointB.x, pointB.y).stroke(border);
 }
 
-function getPosition(i, j, alignment, canvas) {
-  let x;
-  let y;
-  if (alignment == "vertical") {
-    x = (1 / 9 * j + 1 / 18) * canvas.width
-    y = (1 - (1 / 13 * i + 1 / 26)) * canvas.height
-  } else {
-    x = (1 / 13 * i + 1 / 26) * canvas.width
-    y = (1 / 9 * j + 1 / 18) * canvas.height
-  }
+function getPosition(i, j) {
   return {
-    x: x,
-    y: y
+    x: (10 * i + 5),
+    y: (10 * j + 5)
   }
 }
 
