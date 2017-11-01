@@ -1,16 +1,19 @@
+"use strict"
 window.onerror = function(messageOrEvent, source, lineno, colno, error) {
   if (confirm('on snap!\nyou just found an error\ndo you want to send it to the developer?')) {
-    var body = document.getElementById('body');
+    let body = document.getElementById('body');
     body.innerHTML = 'open a new issue on <a href="http://www.github.com/tam724/octaball/issues">github</a> or send me an <a href="mailto:tamme-c@gmx.de?Subject=octaball error&Body=' + error.stack + '">email</a> (tamme-c@gmx.de): </br></br>'
     body.innerHTML += error.stack;
   }
   return false;
 }
 /** layouts */
-var lytCtr = new layoutController('div_parent');
-
 // layout welcome
-var welcomeLayout = new layout('welcome', 'website/layout_welcome.html', lytCtr, function(par) {
+class WelcomeLayout extends Layout {
+  constructor(lytCtr) {
+    super('welcome', 'website/layout_welcome.html', lytCtr);
+  }
+  init(par) {
     // init
     // html elements
     this.inputName = document.getElementById('input_name');
@@ -22,9 +25,9 @@ var welcomeLayout = new layout('welcome', 'website/layout_welcome.html', lytCtr,
     this.pageControls = par.pageControls;
 
     //event listener
-    this.inputOkay.addEventListener('click', this.onButtonOkay);
-    this.inputColor.addEventListener('change', this.onRangeColor);
-    this.inputColor.addEventListener('input', this.onRangeColor);
+    this.inputOkay.addEventListener('click', () => this.onButtonOkay());
+    this.inputColor.addEventListener('change', () => this.onRangeColor());
+    this.inputColor.addEventListener('input', () => this.onRangeColor());
 
     //variables
     this.color = null;
@@ -43,54 +46,53 @@ var welcomeLayout = new layout('welcome', 'website/layout_welcome.html', lytCtr,
       this.inputName.value = par.playerInfo.name;
       this.onButtonOkay();
     }
-  },
-  function() {
-    //dest
-    this.inputOkay.removeEventListener('click', this.onButtonOkay);
-    this.inputColor.removeEventListener('change', this.onRangeColor);
-    this.inputColor.removeEventListener('input', this.onRangeColor);
-  });
-welcomeLayout.onButtonOkay = function() {
-  if (welcomeLayout.inputName.value == '') {
-    welcomeLayout.pageControls.updateStatusFunc('insert a name');
-  } else if (!welcomeLayout.color) {
-    welcomeLayout.pageControls.updateStatusFunc('choose a color');
-  } else {
-    if (welcomeLayout.inputRemember.checked) {
-      localStorage.setItem('name', welcomeLayout.inputName.value);
-      localStorage.setItem('color', welcomeLayout.color);
+  }
+  dest() {}
+  onButtonOkay() {
+    if (this.inputName.value == '') {
+      this.pageControls.updateStatusFunc('insert a name');
+    } else if (!this.color) {
+      this.pageControls.updateStatusFunc('choose a color');
     } else {
-      localStorage.removeItem('name');
-      localStorage.removeItem('color');
-    }
-    if (welcomeLayout.gameID) {
-      welcomeLayout.layoutController.changeLayout(connectLayout.name, {
-        pageControls: welcomeLayout.pageControls,
-        playerInfo: {
-          name: welcomeLayout.inputName.value,
-          color: welcomeLayout.color
-        },
-        gameID: welcomeLayout.gameID
-      });
-    } else {
-      welcomeLayout.layoutController.changeLayout(mainLayout.name, {
-        pageControls: welcomeLayout.pageControls,
-        playerInfo: {
-          name: welcomeLayout.inputName.value,
-          color: welcomeLayout.color
-        }
-      });
+      if (this.inputRemember.checked) {
+        localStorage.setItem('name', this.inputName.value);
+        localStorage.setItem('color', this.color);
+      } else {
+        localStorage.removeItem('name');
+        localStorage.removeItem('color');
+      }
+      if (this.gameID) {
+        this.layoutController.changeLayout(connectLayout.name, {
+          pageControls: this.pageControls,
+          playerInfo: {
+            name: this.inputName.value,
+            color: this.color
+          },
+          gameID: this.gameID
+        });
+      } else {
+        this.layoutController.changeLayout(mainLayout.name, {
+          pageControls: this.pageControls,
+          playerInfo: {
+            name: this.inputName.value,
+            color: this.color
+          }
+        });
+      }
     }
   }
+  onRangeColor() {
+    let value = this.inputColor.value;
+    this.color = getColorfromDouble(value);
+    this.inputName.style.backgroundColor = this.color;
+  }
 }
-welcomeLayout.onRangeColor = function() {
-  var value = welcomeLayout.inputColor.value;
-  welcomeLayout.color = getColorfromDouble(value);
-  welcomeLayout.inputName.style.backgroundColor = welcomeLayout.color;
-}
-
 // layout main
-var mainLayout = new layout('main', 'website/layout_main.html', lytCtr, function(par) {
+class MainLayout extends Layout {
+  constructor(lytCtr) {
+    super('main', 'website/layout_main.html', lytCtr);
+  }
+  init(par) {
     // init
     // html elements
     this.inputCreate = document.getElementById('input_create');
@@ -103,10 +105,10 @@ var mainLayout = new layout('main', 'website/layout_main.html', lytCtr, function
     this.playerInfo = par.playerInfo;
 
     //event listener
-    this.inputCreate.addEventListener('click', this.onButtonCreate);
-    this.inputConnect.addEventListener('click', this.onButtonConnect);
-    this.inputChangeName.addEventListener('click', this.onButtonChangeName);
-    this.inputSingleplayer.addEventListener('click', this.onButtonSingleplayer);
+    this.inputCreate.addEventListener('click', () => this.onButtonCreate());
+    this.inputConnect.addEventListener('click', () => this.onButtonConnect());
+    this.inputChangeName.addEventListener('click', () => this.onButtonChangeName());
+    this.inputSingleplayer.addEventListener('click', () => this.onButtonSingleplayer());
 
     //variables
 
@@ -115,41 +117,40 @@ var mainLayout = new layout('main', 'website/layout_main.html', lytCtr, function
     this.pageControls.updateStatusFunc('hi ' + this.playerInfo.name);
 
     this.pageControls.updateHashFunc('');
-  },
-  function() {
-    //dest
-    this.inputCreate.removeEventListener('click', this.onButtonCreate);
-    this.inputConnect.removeEventListener('click', this.onButtonConnect);
-    this.inputSingleplayer.removeEventListener('click', this.onButtonSingleplayer);
-  });
-mainLayout.onButtonCreate = function() {
-  mainLayout.layoutController.changeLayout(createLayout.name, {
-    pageControls: mainLayout.pageControls,
-    playerInfo: mainLayout.playerInfo
-  });
+  }
+  dest() {}
+  onButtonCreate() {
+    this.layoutController.changeLayout(createLayout.name, {
+      pageControls: this.pageControls,
+      playerInfo: this.playerInfo
+    });
+  }
+  onButtonConnect() {
+    this.layoutController.changeLayout(connectLayout.name, {
+      pageControls: this.pageControls,
+      playerInfo: this.playerInfo
+    });
+  }
+  onButtonChangeName() {
+    this.layoutController.changeLayout(welcomeLayout.name, {
+      pageControls: this.pageControls
+    });
+  }
+  onButtonSingleplayer() {
+    this.layoutController.changeLayout(playingLayout.name, {
+      pageControls: this.pageControls,
+      playerInfo: this.playerInfo,
+      gameType: 'offlineSingle',
+      gameConnection: new gameConnection()
+    })
+  }
 }
-mainLayout.onButtonConnect = function() {
-  mainLayout.layoutController.changeLayout(connectLayout.name, {
-    pageControls: mainLayout.pageControls,
-    playerInfo: mainLayout.playerInfo
-  });
-}
-mainLayout.onButtonChangeName = function() {
-  mainLayout.layoutController.changeLayout(welcomeLayout.name, {
-    pageControls: mainLayout.pageControls
-  });
-}
-mainLayout.onButtonSingleplayer = function() {
-  mainLayout.layoutController.changeLayout(playingLayout.name, {
-    pageControls: mainLayout.pageControls,
-    playerInfo: mainLayout.playerInfo,
-    gameType: 'offlineSingle',
-    gameConnection: new gameConnection()
-  })
-}
-
 // layout create
-var createLayout = new layout('create', 'website/layout_create.html', lytCtr, function(par) {
+class CreateLayout extends Layout {
+  constructor(lytCtr) {
+    super('create', 'website/layout_create.html', lytCtr);
+  }
+  init(par) {
     // init
     // html elements
     this.inputGameId = document.getElementById('input_game_id');
@@ -164,7 +165,7 @@ var createLayout = new layout('create', 'website/layout_create.html', lytCtr, fu
     this.playerInfo = par.playerInfo;
 
     //event listener
-    this.inputBack.addEventListener('click', this.onButtonBack);
+    this.inputBack.addEventListener('click', () => this.onButtonBack());
     //variables
 
     //initialize site
@@ -176,50 +177,52 @@ var createLayout = new layout('create', 'website/layout_create.html', lytCtr, fu
     this.aShareMail.hidden = true;
     this.gameConnection = new gameConnection();
     this.createID();
-  },
-  function() {
-    //dest
-    this.inputBack.removeEventListener('click', this.onButtonBack);
-  });
-createLayout.onButtonBack = function() {
-  createLayout.gameConnection.disconnect();
-  createLayout.layoutController.changeLayout(mainLayout.name, {
-    pageControls: createLayout.pageControls,
-    playerInfo: createLayout.playerInfo
-  });
+  }
+  dest() {}
+  onButtonBack() {
+    this.gameConnection.disconnect();
+    this.layoutController.changeLayout(mainLayout.name, {
+      pageControls: this.pageControls,
+      playerInfo: this.playerInfo
+    });
+  }
+  createID() {
+    this.gameConnection.createID((gameID) => this.onIDCreated(gameID));
+  }
+  onIDCreated(gameID) {
+    this.gameConnection.connectToRoom(gameID, () => this.onConnectedToRoom(), () => this.onRoomConnected());
+  }
+  onConnectedToRoom() {
+    //this.layoutController.changeLayout()
+    this.inputGameId.value = this.gameConnection.gameID;
+    this.pageControls.updateHashFunc(this.gameConnection.gameID);
+    this.divLoader.hidden = true;
+    let shareMessage = encodeURI('Do you want to play octaball with me? Click ' + window.location.href);
+    shareMessage = shareMessage.replace('#', '%23');
+    this.aShareWhatsapp.href = 'whatsapp://send?text=' + shareMessage;
+    this.aShareTelegram.href = "tg:msg?text=" + shareMessage;
+    this.aShareMail.href = 'mailto:?subject=Octaball&body=' + shareMessage;
+    this.aShareWhatsapp.hidden = false;
+    this.aShareTelegram.hidden = false;
+    this.aShareMail.hidden = false;
+    this.pageControls.updateStatusFunc('share this gameID with your friend');
+  }
+  onRoomConnected() {
+    //called when the room is filled with 2 people
+    this.layoutController.changeLayout(playingLayout.name, {
+      pageControls: this.pageControls,
+      playerInfo: this.playerInfo,
+      gameConnection: this.gameConnection
+    });
+  }
 }
-createLayout.createID = function() {
-  createLayout.gameConnection.createID(createLayout.onIDCreated);
-}
-createLayout.onIDCreated = function(gameID) {
-  createLayout.gameConnection.connectToRoom(gameID, createLayout.onConnectedToRoom, createLayout.onRoomConnected);
-}
-createLayout.onConnectedToRoom = function() {
-  //createLayout.layoutController.changeLayout()
-  createLayout.inputGameId.value = createLayout.gameConnection.gameID;
-  createLayout.pageControls.updateHashFunc(createLayout.gameConnection.gameID);
-  createLayout.divLoader.hidden = true;
-  var shareMessage = encodeURI('Do you want to play octaball with me? Click ' + window.location.href);
-  shareMessage = shareMessage.replace('#', '%23');
-  createLayout.aShareWhatsapp.href = 'whatsapp://send?text=' + shareMessage;
-  createLayout.aShareTelegram.href = "tg:msg?text=" + shareMessage;
-  createLayout.aShareMail.href = 'mailto:?subject=Octaball&body=' + shareMessage;
-  createLayout.aShareWhatsapp.hidden = false;
-  createLayout.aShareTelegram.hidden = false;
-  createLayout.aShareMail.hidden = false;
-  createLayout.pageControls.updateStatusFunc('share this gameID with your friend');
-}
-createLayout.onRoomConnected = function() {
-  //called when the room is filled with 2 people
-  createLayout.layoutController.changeLayout(playingLayout.name, {
-    pageControls: createLayout.pageControls,
-    playerInfo: createLayout.playerInfo,
-    gameConnection: createLayout.gameConnection
-  });
-}
-
 // layout connect
-var connectLayout = new layout('connect', 'website/layout_connect.html', lytCtr, function(par) {
+class ConnectLayout extends Layout {
+  constructor(lytCtr) {
+    super('connect', 'website/layout_connect.html', lytCtr);
+  }
+
+  init(par) {
     // init
     // html elements
     this.inputGameId = document.getElementById('input_game_id');
@@ -232,8 +235,8 @@ var connectLayout = new layout('connect', 'website/layout_connect.html', lytCtr,
     this.playerInfo = par.playerInfo;
 
     //event listener
-    this.inputBack.addEventListener('click', this.onButtonBack);
-    this.inputConnect.addEventListener('click', this.onButtonConnect);
+    this.inputBack.addEventListener('click', () => this.onButtonBack());
+    this.inputConnect.addEventListener('click', () => this.onButtonConnect());
 
     //variables
 
@@ -246,243 +249,241 @@ var connectLayout = new layout('connect', 'website/layout_connect.html', lytCtr,
       this.inputGameId.value = par.gameID;
       this.onButtonConnect();
     }
-  },
-  function() {
-    //dest
-    this.inputBack.removeEventListener('click', this.onButtonBack);
-    this.inputConnect.removeEventListener('click', this.onButtonConnect);
-  });
-connectLayout.onButtonBack = function() {
-  connectLayout.layoutController.changeLayout(mainLayout.name, {
-    pageControls: connectLayout.pageControls,
-    playerInfo: connectLayout.playerInfo
-  });
-}
-connectLayout.onButtonConnect = function() {
-  var gameID = connectLayout.inputGameId.value;
-  if (gameID && gameID != '' && gameID.length == 5) {
-    connectLayout.inputGameId.readonly = true;
-    connectLayout.divLoader.hidden = false;
-    connectLayout.gameConnection.checkID(gameID, connectLayout.onCheckResult);
-  } else {
-    connectLayout.pageControls.updateStatusFunc('input a game id');
-  }
-}
-connectLayout.onCheckResult = function(result) {
-  if (result == messages.checkID.rst.ok) {
-    connectLayout.divLoader.hidden = true;
-    connectLayout.pageControls.updateStatusFunc('connecting to game');
-    connectLayout.gameConnection.connectToRoom(connectLayout.inputGameId.value, connectLayout.onConnectedToRoom, connectLayout.onRoomConnected);
-  } else if (result == messages.checkID.rst.error) {
-    connectLayout.inputGameId.readOnly = false;
-    connectLayout.divLoader.hidden = true;
-    connectLayout.pageControls.updateStatusFunc('this id does not exist');
-  }
-}
-connectLayout.onConnectedToRoom = function() {
-  connectLayout.pageControls.updateStatusFunc('connected');
-  connectLayout.pageControls.updateHashFunc(connectLayout.gameConnection.gameID);
-}
-connectLayout.onRoomConnected = function() {
-  //called when the room is filled with 2 people
-  lytCtr.changeLayout(playingLayout.name, {
-    pageControls: connectLayout.pageControls,
-    playerInfo: connectLayout.playerInfo,
-    gameConnection: connectLayout.gameConnection
-  })
-}
-
-var playingLayout = new layout('playing', 'website/layout_playing.html', lytCtr, function(par) {
-  // init
-  // html elements
-  this.divGame = document.getElementById('div_game');
-  this.inputBack = document.getElementById('input_back');
-  this.inputAgain = document.getElementById('input_again');
-  this.canvas = SVG("div_game")
-
-  //site controls
-  this.pageControls = par.pageControls;
-  this.playerInfo = par.playerInfo;
-  this.gameConnection = par.gameConnection;
-  if (par.gameType) {
-    this.gameType = par.gameType;
-  } else {
-    this.gameType = 'online';
   }
 
-  //event listener
-  this.inputBack.addEventListener('click', this.onButtonBack);
-  window.addEventListener('resize', playingLayout.onResize);
-
-  //variables
-  this.touchStartPos = null;
-  this.touchEndPos = null;
-
-  this.alignment = 'horizontal';
-
-  //initialize site
-  playingLayout.inputAgain.hidden = true;
-  this.pageControls.hideTitleFunc();
-  this.resize();
-  playingLayout.gameConnection.initializePlayer(playingLayout.playerInfo, playingLayout.initialized, function(game){playingLayout.redrawCanvas(game, false, true)}, playingLayout.shootResponse, playingLayout.onGameInterrupt, playingLayout.onGameInfo, this.gameType);
-}, function() {
-  //dest
-  this.gameConnection.disconnect();
-  this.pageControls.showTitleFunc();
-  this.inputBack.removeEventListener('click', this.onButtonBack);
-  window.removeEventListener('resize', playingLayout.onResize);
-  this.removeGameControls();
-});
-playingLayout.resize = function() {
-  var width = document.getElementById('div_parent').clientWidth;
-  var height = document.getElementById('div_parent').clientHeight - 50;
-  var h_width_hor = width / 13;
-  var h_height_hor = height / 9;
-  var h_width_ver = width / 9;
-  var h_height_ver = height / 13;
-  var h_hor = Math.min(h_width_hor, h_height_hor);
-  var h_ver = Math.min(h_width_ver, h_height_ver);
-
-  if (h_hor > h_ver) {
-    //horizontal
-    playingLayout.alignment = 'horizontal';
-    playingLayout.divGame.style.height = h_hor * 9 + "px";
-    playingLayout.canvas.height = h_hor * 9;
-    playingLayout.divGame.style.width = h_hor * 13 + "px";
-    playingLayout.canvas.width = h_hor * 13;
-  } else {
-    //vertical
-    playingLayout.alignment = 'vertical';
-    playingLayout.divGame.style.height = h_ver * 13 + "px";
-    playingLayout.canvas.height = h_ver * 13;
-    playingLayout.divGame.style.width = h_ver * 9 + "px";
-    playingLayout.canvas.width = h_ver * 9;
+  dest() {}
+  onButtonBack() {
+    this.layoutController.changeLayout(mainLayout.name, {
+      pageControls: this.pageControls,
+      playerInfo: this.playerInfo
+    });
   }
-}
-playingLayout.onButtonBack = function() {
-  playingLayout.layoutController.changeLayout(mainLayout.name, {
-    pageControls: playingLayout.pageControls,
-    playerInfo: playingLayout.playerInfo
-  });
-}
-playingLayout.initialized = function() {
-  playingLayout.pageControls.updateStatusFunc('waiting for other player');
-}
-playingLayout.redrawCanvas = function(game, updateBackgroud, animate) {
-  playingLayout.currentGame = game;
-  if(updateBackgroud){
-    drawBackgroundtoCanvas(playingLayout.canvas, game, playingLayout.alignment);
-  }
-  drawFieldtoCanvas(playingLayout.canvas, game, playingLayout.alignment, animate);
-  if (game.activeplayer.name == playingLayout.playerInfo.name) {
-    playingLayout.pageControls.updateStatusFunc('it\'s your turn');
-  } else {
-    playingLayout.pageControls.updateStatusFunc('it is ' + game.activeplayer.name + '\'s turn');
-  }
-}
-playingLayout.shootResponse = function(response) {
-  if (response == messages.shoot.rst.ok) {
-    //well done
-  } else if (response == messages.shoot.rst.gameWon) {
-    console.log(messages.shoot.rst.gameWon);
-  } else if (response == messages.shoot.rst.notYourTurn) {
-    playingLayout.pageControls.updateStatusFunc('it\'s not your turn');
-  } else if (response == messages.shoot.rst.occupied) {
-    playingLayout.pageControls.updateStatusFunc('shoot already occupied');
-  } else if (response == messages.shoot.rst.border) {
-    playingLayout.pageControls.updateStatusFunc('shoot over border');
-  }
-}
-playingLayout.onGameInterrupt = function(interrupt) {
-  if (interrupt.msg == messages.gameInterrupt.rst.gameStart) {
-    playingLayout.addGameControls();
-    playingLayout.inputAgain.hidden = true;
-  } else if (interrupt.msg == messages.gameInterrupt.rst.gameEnd) {
-    if (interrupt.data == 'disconnect') {
-      playingLayout.pageControls.updateStatusFunc('the game ended, because someone disconnected');
-      playingLayout.removeGameControls();
-      playingLayout.inputAgain.hidden = true;
-    } else if (interrupt.data == 'winner') {
-      playingLayout.pageControls.updateStatusFunc(interrupt.player.name + ' wins this game, congratulations!');
-      playingLayout.removeGameControls();
-      playingLayout.inputAgain.hidden = false;
-      playingLayout.inputAgain.addEventListener('click', function() {
-        playingLayout.gameConnection.again();
-      })
+  onButtonConnect() {
+    let gameID = this.inputGameId.value;
+    if (gameID && gameID != '' && gameID.length == 5) {
+      this.inputGameId.readonly = true;
+      this.divLoader.hidden = false;
+      this.gameConnection.checkID(gameID, (res) =>this.onCheckResult(res));
+    } else {
+      this.pageControls.updateStatusFunc('input a game id');
     }
   }
-}
-playingLayout.addGameControls = function() {
-  document.addEventListener('keypress', playingLayout.onKeyPress, false);
-  playingLayout.divGame.addEventListener('touchstart', playingLayout.onTouchDown, false);
-  playingLayout.divGame.addEventListener('touchmove', playingLayout.onTouchMove, false);
-  playingLayout.divGame.addEventListener('touchend', playingLayout.onTouchUp, false);
-}
-playingLayout.removeGameControls = function() {
-  document.removeEventListener('keypress', playingLayout.onKeyPress, false);
-  playingLayout.divGame.removeEventListener('touchstart', playingLayout.onTouchDown, false);
-  playingLayout.divGame.removeEventListener('touchmove', playingLayout.onTouchMove, false);
-  playingLayout.divGame.removeEventListener('touchend', playingLayout.onTouchUp, false);
-}
-playingLayout.onGameInfo = function(info) {
-  if (info.msg == messages.gameInfo.rst.again) {
-    playingLayout.pageControls.updateStatusFunc(info.player + ' wants to play again');
+  onCheckResult(result) {
+    if (result == messages.checkID.rst.ok) {
+      this.divLoader.hidden = true;
+      this.pageControls.updateStatusFunc('connecting to game');
+      this.gameConnection.connectToRoom(this.inputGameId.value, () => this.onConnectedToRoom(), () =>this.onRoomConnected());
+    } else if (result == messages.checkID.rst.error) {
+      this.inputGameId.readOnly = false;
+      this.divLoader.hidden = true;
+      this.pageControls.updateStatusFunc('this id does not exist');
+    }
+  }
+  onConnectedToRoom() {
+    this.pageControls.updateStatusFunc('connected');
+    this.pageControls.updateHashFunc(this.gameConnection.gameID);
+  }
+  onRoomConnected() {
+    //called when the room is filled with 2 people
+    this.layoutController.changeLayout(playingLayout.name, {
+      pageControls: this.pageControls,
+      playerInfo: this.playerInfo,
+      gameConnection: this.gameConnection
+    })
   }
 }
-playingLayout.onKeyPress = function(event) {
-  var direction = getDirectionfromKey(event.key, playingLayout.alignment);
-  if (!playingLayout.gameConnection.shoot(direction)) {
-    playingLayout.pageControls.updateStatusFunc('Waiting for server..');
+// layout playing
+class PlayingLayout extends Layout {
+  constructor(lytCtr) {
+    super('playing', 'website/layout_playing.html', lytCtr);
   }
-}
-playingLayout.onTouchDown = function(event) {
-  event.preventDefault();
-  playingLayout.touchStartPos = {
-    x: event.touches[0].pageX,
-    y: event.touches[0].pageY
-  };
-}
-playingLayout.onTouchMove = function(event) {
-  event.preventDefault();
-  playingLayout.touchEndPos = {
-    x: event.touches[event.touches.length - 1].pageX,
-    y: event.touches[event.touches.length - 1].pageY
-  };
-}
-playingLayout.onTouchUp = function(event) {
-  event.preventDefault();
-  if (playingLayout.touchStartPos && playingLayout.touchEndPos) {
-    var swipe = {
-      x: playingLayout.touchEndPos.x - playingLayout.touchStartPos.x,
-      y: playingLayout.touchEndPos.y - playingLayout.touchStartPos.y
-    };
-    if (Math.sqrt(swipe.x ** 2 + swipe.y ** 2) > 50) {
-      var angle = Math.atan2(swipe.x, swipe.y);
-      angle = angle + Math.PI;
-      angle = angle / (2 * Math.PI);
-      angle = angle * 8;
-      angle = Math.round(angle);
-      var directions = ['w', 'q', 'a', 'y', 'x', 'c', 'd', 'e', 'w'];
-      if (!playingLayout.gameConnection.shoot(getDirectionfromKey(directions[angle], playingLayout.alignment))) {
-        playingLayout.pageControls.updateStatusFunc('Waiting for server..');
+  init(par) {
+    // html elements
+    this.divGame = document.getElementById('div_game');
+    this.inputBack = document.getElementById('input_back');
+    this.inputAgain = document.getElementById('input_again');
+    this.canvas = SVG("div_game")
+
+    //site controls
+    this.pageControls = par.pageControls;
+    this.playerInfo = par.playerInfo;
+    this.gameConnection = par.gameConnection;
+    if (par.gameType) {
+      this.gameType = par.gameType;
+    } else {
+      this.gameType = 'online';
+    }
+
+    //event listener
+    this.inputBack.addEventListener('click', () => this.onButtonBack());
+    window.addEventListener('resize', () => this.onResize());
+
+    //variables
+    this.touchStartPos = null;
+    this.touchEndPos = null;
+
+    this.alignment = 'horizontal';
+
+    //initialize site
+    this.inputAgain.hidden = true;
+    this.pageControls.hideTitleFunc();
+    this.resize();
+    this.gameConnection.initializePlayer(this.playerInfo, () => this.initialized(), (game) => this.redrawCanvas(game, false, true), (resp) => this.shootResponse(resp), (interr) => this.onGameInterrupt(interr), (info) => this.onGameInfo(info), this.gameType);
+  }
+  dest() {
+    this.gameConnection.disconnect();
+    this.pageControls.showTitleFunc();
+    this.removeGameControls();
+  }
+  resize() {
+    let width = document.getElementById('div_parent').clientWidth;
+    let height = document.getElementById('div_parent').clientHeight - 50;
+    let h_width_hor = width / 13;
+    let h_height_hor = height / 9;
+    let h_width_ver = width / 9;
+    let h_height_ver = height / 13;
+    let h_hor = Math.min(h_width_hor, h_height_hor);
+    let h_ver = Math.min(h_width_ver, h_height_ver);
+
+    if (h_hor > h_ver) {
+      //horizontal
+      this.alignment = 'horizontal';
+      this.divGame.style.height = h_hor * 9 + "px";
+      this.canvas.height = h_hor * 9;
+      this.divGame.style.width = h_hor * 13 + "px";
+      this.canvas.width = h_hor * 13;
+    } else {
+      //vertical
+      this.alignment = 'vertical';
+      this.divGame.style.height = h_ver * 13 + "px";
+      this.canvas.height = h_ver * 13;
+      this.divGame.style.width = h_ver * 9 + "px";
+      this.canvas.width = h_ver * 9;
+    }
+  }
+  onButtonBack() {
+    this.layoutController.changeLayout(mainLayout.name, {
+      pageControls: this.pageControls,
+      playerInfo: this.playerInfo
+    });
+  }
+  initialized() {
+    this.pageControls.updateStatusFunc('waiting for other player');
+  }
+  redrawCanvas(game, updateBackgroud, animate) {
+    this.currentGame = game;
+    if (updateBackgroud) {
+      drawBackgroundtoCanvas(this.canvas, game, this.alignment);
+    }
+    drawFieldtoCanvas(this.canvas, game, this.alignment, animate);
+    if (game.activeplayer.name == this.playerInfo.name) {
+      this.pageControls.updateStatusFunc('it\'s your turn');
+    } else {
+      this.pageControls.updateStatusFunc('it is ' + game.activeplayer.name + '\'s turn');
+    }
+  }
+  shootResponse(response) {
+    if (response == messages.shoot.rst.ok) {
+      //well done
+    } else if (response == messages.shoot.rst.gameWon) {
+      console.log(messages.shoot.rst.gameWon);
+    } else if (response == messages.shoot.rst.notYourTurn) {
+      this.pageControls.updateStatusFunc('it\'s not your turn');
+    } else if (response == messages.shoot.rst.occupied) {
+      this.pageControls.updateStatusFunc('shoot already occupied');
+    } else if (response == messages.shoot.rst.border) {
+      this.pageControls.updateStatusFunc('shoot over border');
+    }
+  }
+  onGameInterrupt(interrupt) {
+    if (interrupt.msg == messages.gameInterrupt.rst.gameStart) {
+      this.addGameControls();
+      this.inputAgain.hidden = true;
+    } else if (interrupt.msg == messages.gameInterrupt.rst.gameEnd) {
+      if (interrupt.data == 'disconnect') {
+        this.pageControls.updateStatusFunc('the game ended, because someone disconnected');
+        this.removeGameControls();
+        this.inputAgain.hidden = true;
+      } else if (interrupt.data == 'winner') {
+        this.pageControls.updateStatusFunc(interrupt.player.name + ' wins this game, congratulations!');
+        this.removeGameControls();
+        this.inputAgain.hidden = false;
+        this.inputAgain.addEventListener('click', () => this.gameConnection.again())
       }
     }
   }
-  playingLayout.touchStartPos = null;
-}
-playingLayout.onResize = function() {
-  playingLayout.resize()
-  if (playingLayout.currentGame) {
-    playingLayout.redrawCanvas(playingLayout.currentGame, true, false);
+  addGameControls() {
+    document.addEventListener('keyup', (e) => this.onKeyUp(e), false);
+    this.divGame.addEventListener('touchstart', (e) => this.onTouchDown(e), false);
+    this.divGame.addEventListener('touchmove', (e) => this.onTouchMove(e), false);
+    this.divGame.addEventListener('touchend', (e) => this.onTouchUp(e), false);
+  }
+  removeGameControls() {
+    //TODO
+    //document.removeEventListener('keypress', this.onKeyPress, false);
+    //this.divGame.removeEventListener('touchstart', this.onTouchDown, false);
+    //this.divGame.removeEventListener('touchmove', this.onTouchMove, false);
+    //this.divGame.removeEventListener('touchend', this.onTouchUp, false);
+  }
+  onGameInfo(info) {
+    if (info.msg == messages.gameInfo.rst.again) {
+      this.pageControls.updateStatusFunc(info.player + ' wants to play again');
+    }
+  }
+  onKeyUp(event) {
+    let direction = getDirectionfromKey(event.key, this.alignment);
+    if (!this.gameConnection.shoot(direction)) {
+      this.pageControls.updateStatusFunc('Waiting for server..');
+    }
+  }
+  onTouchDown(event) {
+    event.preventDefault();
+    this.touchStartPos = {
+      x: event.touches[0].pageX,
+      y: event.touches[0].pageY
+    };
+  }
+  onTouchMove(event) {
+    event.preventDefault();
+    this.touchEndPos = {
+      x: event.touches[event.touches.length - 1].pageX,
+      y: event.touches[event.touches.length - 1].pageY
+    };
+  }
+  onTouchUp(event) {
+    event.preventDefault();
+    if (this.touchStartPos && this.touchEndPos) {
+      let swipe = {
+        x: this.touchEndPos.x - this.touchStartPos.x,
+        y: this.touchEndPos.y - this.touchStartPos.y
+      };
+      if (Math.sqrt(swipe.x ** 2 + swipe.y ** 2) > 50) {
+        let angle = Math.atan2(swipe.x, swipe.y);
+        angle = angle + Math.PI;
+        angle = angle / (2 * Math.PI);
+        angle = angle * 8;
+        angle = Math.round(angle);
+        let directions = ['w', 'q', 'a', 'y', 'x', 'c', 'd', 'e', 'w'];
+        if (!this.gameConnection.shoot(getDirectionfromKey(directions[angle], this.alignment))) {
+          this.pageControls.updateStatusFunc('Waiting for server..');
+        }
+      }
+    }
+    this.touchStartPos = null;
+  }
+  onResize() {
+    this.resize()
+    if (this.currentGame) {
+      this.redrawCanvas(this.currentGame, true, false);
+    }
   }
 }
-
 /** end layouts */
 
-var divTitle = document.getElementById('div_title');
-var divStatus = document.getElementById('div_status');
-var divParent = document.getElementById('div_parent');
-var divFooter = document.getElementById('div_footer');
+let divTitle = document.getElementById('div_title');
+let divStatus = document.getElementById('div_status');
+let divParent = document.getElementById('div_parent');
+let divFooter = document.getElementById('div_footer');
 
 function updateTitle(text) {
   divTitle.innerHTML = text;
@@ -522,9 +523,9 @@ function updateHash(gameID) {
 
 //helper functions
 function getColorfromDouble(value) {
-  var step = 100 / 3;
-  var r, g, b;
-  var max = 150;
+  let step = 100 / 3;
+  let r, g, b;
+  let max = 150;
   if (value < step) {
     r = 0;
     g = parseInt(value / step * max, 10);
@@ -543,7 +544,7 @@ function getColorfromDouble(value) {
 }
 
 function toHex(value) {
-  var hex = (value).toString(16);
+  let hex = (value).toString(16);
   while (hex.length < 2) {
     hex = '0' + hex;
   }
@@ -554,53 +555,53 @@ let backgroundelements = [];
 let foregroundelements = [];
 
 function drawBackgroundtoCanvas(canvas, game, alignment) {
-  var h = 10;
+  let h = 10;
   backgroundelements = clearElements(backgroundelements);
-  var background = {
+  let background = {
     width: 1,
     color: "#A9D0F5"
   }
   if (alignment == "vertical") {
-    for (var i = 0; i < 13; i++) {
+    for (let i = 0; i < 13; i++) {
       backgroundelements.push(
         canvas.line(0 + "%", (100 / 13 * i + 100 / 26) + "%", 100 + "%", (100 / 13 * i + 100 / 26) + "%").stroke(background));
     }
-    for (var i = 0; i < 9; i++) {
+    for (let i = 0; i < 9; i++) {
       backgroundelements.push(
         canvas.line(100 / 9 * i + 100 / 18 + "%", 0 + "%", 100 / 9 * i + 100 / 18 + "%", 100 + "%").stroke(background));
     }
   } else {
-    for (var i = 0; i < 9; i++) {
+    for (let i = 0; i < 9; i++) {
       backgroundelements.push(
         canvas.line(0 + "%", (100 / 9 * i + 100 / 18) + "%", 100 + "%", (100 / 9 * i + 100 / 18) + "%").stroke(background));
     }
-    for (var i = 0; i < 13; i++) {
+    for (let i = 0; i < 13; i++) {
       backgroundelements.push(
         canvas.line(100 / 13 * i + 100 / 26 + "%", 0 + "%", 100 / 13 * i + 100 / 26 + "%", 100 + "%").stroke(background));
     }
   }
   //draw border
-  noCorner = getPosition(11, 8, alignment, canvas)
-  nwCorner = getPosition(1, 8, alignment, canvas)
-  soCorner = getPosition(11, 0, alignment, canvas)
-  swCorner = getPosition(1, 0, alignment, canvas)
-  g1no = getPosition(1, 5, alignment, canvas)
-  g1nw = getPosition(0, 5, alignment, canvas)
-  g1so = getPosition(1, 3, alignment, canvas)
-  g1sw = getPosition(0, 3, alignment, canvas)
-  g2no = getPosition(12, 5, alignment, canvas)
-  g2nw = getPosition(11, 5, alignment, canvas)
-  g2so = getPosition(12, 3, alignment, canvas)
-  g2sw = getPosition(11, 3, alignment, canvas)
-  border = {
+  let noCorner = getPosition(11, 8, alignment, canvas)
+  let nwCorner = getPosition(1, 8, alignment, canvas)
+  let soCorner = getPosition(11, 0, alignment, canvas)
+  let swCorner = getPosition(1, 0, alignment, canvas)
+  let g1no = getPosition(1, 5, alignment, canvas)
+  let g1nw = getPosition(0, 5, alignment, canvas)
+  let g1so = getPosition(1, 3, alignment, canvas)
+  let g1sw = getPosition(0, 3, alignment, canvas)
+  let g2no = getPosition(12, 5, alignment, canvas)
+  let g2nw = getPosition(11, 5, alignment, canvas)
+  let g2so = getPosition(12, 3, alignment, canvas)
+  let g2sw = getPosition(11, 3, alignment, canvas)
+  let border = {
     width: 2,
     color: "#000000"
   }
-  player1 = {
+  let player1 = {
     width: 2,
     color: game.player.player0.color
   }
-  player2 = {
+  let player2 = {
     width: 2,
     color: game.player.player1.color
   }
@@ -627,32 +628,32 @@ function clearElements(elements) {
 }
 
 function drawFieldtoCanvas(canvas, game, alignment, animate) {
-  var h = 10;
+  let h = 10;
   foregroundelements = clearElements(foregroundelements);
-  var background = {
+  let background = {
     width: 1,
     color: "#A9D0F5"
   }
-  let finish = animate ? game.shoots.length - 1: game.shoots.length
-  for (var i = 0; i < finish; i++) {
-    var shoot = game.shoots[i];
-    posA = getPosition(shoot.a.x, shoot.a.y, alignment, canvas)
-    posB = getPosition(shoot.b.x, shoot.b.y, alignment, canvas)
-    style = {
+  let finish = animate ? game.shoots.length - 1 : game.shoots.length
+  for (let i = 0; i < finish; i++) {
+    let shoot = game.shoots[i];
+    let posA = getPosition(shoot.a.x, shoot.a.y, alignment, canvas)
+    let posB = getPosition(shoot.b.x, shoot.b.y, alignment, canvas)
+    let style = {
       width: 2,
       color: shoot.p
     }
     foregroundelements.push(drawLine(posA, posB, canvas, style));
   }
   if (game.shoots.length > 0 && animate) {
-    var shoot = game.shoots[game.shoots.length - 1]
-    posA = getPosition(shoot.a.x, shoot.a.y, alignment, canvas)
-    posB = getPosition(shoot.b.x, shoot.b.y, alignment, canvas)
-    style = {
+    let shoot = game.shoots[game.shoots.length - 1]
+    let posA = getPosition(shoot.a.x, shoot.a.y, alignment, canvas)
+    let posB = getPosition(shoot.b.x, shoot.b.y, alignment, canvas)
+    let style = {
       width: 2,
       color: shoot.p
     }
-    ballPos = getPosition(game.ball.x, game.ball.y, alignment, canvas);
+    let ballPos = getPosition(game.ball.x, game.ball.y, alignment, canvas);
     if (shoot.b.x == game.ball.x && shoot.b.y == game.ball.y) {
       let line = drawLine(posA, posA, canvas, style);
       line.animate({
@@ -687,7 +688,7 @@ function drawFieldtoCanvas(canvas, game, alignment, animate) {
       foregroundelements.push(ball);
     }
   } else {
-    ballPos = getPosition(game.ball.x, game.ball.y, alignment, canvas);
+    let ballPos = getPosition(game.ball.x, game.ball.y, alignment, canvas);
     foregroundelements.push(drawBall(ballPos, canvas, game.activeplayer.color));
   }
 }
@@ -703,6 +704,8 @@ function drawLine(pointA, pointB, canvas, border) {
 }
 
 function getPosition(i, j, alignment, canvas) {
+  let x;
+  let y;
   if (alignment == "vertical") {
     x = (1 / 9 * j + 1 / 18) * canvas.width
     y = (1 - (1 / 13 * i + 1 / 26)) * canvas.height
@@ -717,7 +720,7 @@ function getPosition(i, j, alignment, canvas) {
 }
 
 function getDirectionfromKey(key, alignment) {
-  var keyDict = {};
+  let keyDict = {};
   if (alignment == 'horizontal') {
     keyDict = {
       q: 'G',
@@ -745,12 +748,19 @@ function getDirectionfromKey(key, alignment) {
 }
 
 //main script
-lytCtr.registerLayout(welcomeLayout);
-lytCtr.registerLayout(mainLayout);
-lytCtr.registerLayout(createLayout);
-lytCtr.registerLayout(connectLayout);
-lytCtr.registerLayout(playingLayout);
-var par = {
+let layoutContr = new LayoutController('div_parent');
+let welcomeLayout = new WelcomeLayout(layoutContr);
+let mainLayout = new MainLayout(layoutContr);
+let createLayout = new CreateLayout(layoutContr);
+let connectLayout = new ConnectLayout(layoutContr);
+let playingLayout = new PlayingLayout(layoutContr);
+
+layoutContr.registerLayout(welcomeLayout);
+layoutContr.registerLayout(mainLayout);
+layoutContr.registerLayout(createLayout);
+layoutContr.registerLayout(connectLayout);
+layoutContr.registerLayout(playingLayout);
+let par = {
   pageControls: {
     updateTitleFunc: updateTitle,
     updateStatusFunc: updateStatus,
@@ -760,7 +770,7 @@ var par = {
   },
 };
 if (window.location.hash != '') {
-  var gameID = window.location.hash.substring(1, window.location.hash.length);
+  let gameID = window.location.hash.substring(1, window.location.hash.length);
   par.gameID = gameID;
 }
 if (localStorage.getItem('name') != null && localStorage.getItem('color') != null) {
@@ -770,4 +780,4 @@ if (localStorage.getItem('name') != null && localStorage.getItem('color') != nul
   }
 }
 //
-lytCtr.initializeLayout(welcomeLayout.name, par);
+layoutContr.initializeLayout(welcomeLayout.name, par);

@@ -1,5 +1,5 @@
 var messages = new Messages();
-let address = 'https://octaball-octaball.1d35.starter-us-east-1.openshiftapps.com/' // ''
+const address = '/' //'https://octaball-octaball.1d35.starter-us-east-1.openshiftapps.com/' // ''
 
 class gameConnection{
   constructor(){
