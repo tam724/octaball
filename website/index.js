@@ -141,7 +141,7 @@ class MainLayout extends Layout {
       pageControls: this.pageControls,
       playerInfo: this.playerInfo,
       gameType: 'offlineSingle',
-      gameConnection: new gameConnection()
+      gameConnection: new OfflineSingleGameConnection()
     })
   }
 }
@@ -175,7 +175,7 @@ class CreateLayout extends Layout {
     this.aShareWhatsapp.hidden = true;
     this.aShareTelegram.hidden = true;
     this.aShareMail.hidden = true;
-    this.gameConnection = new gameConnection();
+    this.gameConnection = new OnlineGameConnection();
     this.createID();
   }
   dest() {}
@@ -244,7 +244,7 @@ class ConnectLayout extends Layout {
     this.pageControls.updateStatusFunc('type a game id');
     this.divLoader.style.borderTopColor = this.playerInfo.color;
 
-    this.gameConnection = new gameConnection();
+    this.gameConnection = new OnlineGameConnection();
     if (par.gameID) {
       this.inputGameId.value = par.gameID;
       this.onButtonConnect();
