@@ -325,6 +325,7 @@ class PlayingLayout extends Layout {
     this.touchEndPos = null;
 
     this.alignment = 'horizontal';
+    this.graphicsElements = {};
 
     //initialize site
     this.inputAgain.hidden = true;
@@ -348,10 +349,7 @@ class PlayingLayout extends Layout {
   }
   redrawCanvas(game, updateBackgroud, animate) {
     this.currentGame = game;
-    if (updateBackgroud) {
-      drawBackgroundtoCanvas(this.canvas, game);
-    }
-    drawFieldtoCanvas(this.canvas, game, animate);
+    drawFieldtoCanvas(this.canvas, game, this.graphicsElements, animate);
     if (game.activeplayer.name == this.playerInfo.name) {
       this.pageControls.updateStatusFunc('it\'s your turn');
     } else {
@@ -374,7 +372,9 @@ class PlayingLayout extends Layout {
   onGameInterrupt(interrupt) {
     if (interrupt.msg == messages.gameInterrupt.rst.gameStart) {
       this.addGameControls();
-      drawBackgroundtoCanvas(this.canvas);
+      this.canvas.clear();
+      drawBackgroundtoCanvas(this.canvas, this.graphicsElements);
+      this.graphicsElements.ball = drawBall(getPosition(6, 4), this.canvas, '#000000');
       this.inputAgain.hidden = true;
     } else if (interrupt.msg == messages.gameInterrupt.rst.gameEnd) {
       if (interrupt.data == 'disconnect') {
@@ -528,7 +528,7 @@ function getColorfromDouble(value) {
     b = parseInt((value - 2 * step) / step * max, 10);
     r = parseInt(max - (value - 2 * step) / step * max, 10);
   }
-  mycolor = "#" + toHex(r) + toHex(g) + toHex(b);
+  let mycolor = "#" + toHex(r) + toHex(g) + toHex(b);
   return mycolor;
 }
 
@@ -540,10 +540,7 @@ function toHex(value) {
   return hex;
 }
 
-let ball;
-
-function drawBackgroundtoCanvas(canvas) {
-  let h = 10;
+function drawBackgroundtoCanvas(canvas, graphicsElements) {
   let background = {
     width: 0.2,
     color: "#A9D0F5"
@@ -571,40 +568,13 @@ function drawBackgroundtoCanvas(canvas) {
     width: 0.3,
     color: "#000000"
   }
-  let player1 = {
-    width: 0.3,
-    color: "#FF0000"
-  }
-  let player2 = {
-    width: 0.3,
-    color: "#00FF00"
-  }
-  drawLine(nwCorner, noCorner, canvas, border);
-  drawLine(swCorner, soCorner, canvas, border);
-  drawLine(nwCorner, g1no, canvas, border);
-  drawLine(swCorner, g1so, canvas, border);
-  drawLine(noCorner, g2nw, canvas, border);
-  drawLine(soCorner, g2sw, canvas, border);
-  drawLine(g1no, g1nw, canvas, player1);
-  drawLine(g1nw, g1sw, canvas, player1);
-  drawLine(g1sw, g1so, canvas, player1);
-  drawLine(g2nw, g2no, canvas, player2);
-  drawLine(g2no, g2so, canvas, player2);
-  drawLine(g2so, g2sw, canvas, player2);
+  canvas.polyline([g1no, nwCorner, noCorner, g2nw]).fill('none').stroke(border);
+  canvas.polyline([g1so, swCorner, soCorner, g2sw]).fill('none').stroke(border);
+  graphicsElements.goalPlayer0 = canvas.polyline([g1no, g1nw, g1sw, g1so]).fill('none').stroke(border);
+  graphicsElements.goalPlayer1 = canvas.polyline([g2nw, g2no, g2so, g2sw]).fill('none').stroke(border);
 }
 
-function clearElements(elements) {
-  for (let i = 0; i < elements.length; i++) {
-    elements[i].remove();
-  }
-  return [];
-}
-
-function drawFieldtoCanvas(canvas, game, animate) {
-  if (!ball) {
-    let ballPos = getPosition(game.ball.x, game.ball.y);
-    ball = drawBall(ballPos, canvas, game.activeplayer.color);
-  }
+function drawFieldtoCanvas(canvas, game, graphicsElements, animate) {
   if (game.shoots.length > 0 && animate) {
     let shoot = game.shoots[game.shoots.length - 1]
     let posA = getPosition(shoot.a.x, shoot.a.y)
@@ -618,17 +588,18 @@ function drawFieldtoCanvas(canvas, game, animate) {
     } else {
       drawAnimatedLine(posB, posA, canvas, style);
     }
-    let ballPos = getPosition(game.ball.x, game.ball.y);
-    animateBall(ball, ballPos);
-    colorBall(ball, game.activeplayer.color);
+    animateBall(graphicsElements.ball, getPosition(game.ball.x, game.ball.y));
   }
+  colorBall(graphicsElements.ball, game.activeplayer.color);
+  graphicsElements.goalPlayer0.attr({stroke: game.player.player0.color});
+  graphicsElements.goalPlayer1.attr({stroke: game.player.player1.color});
 }
 
 function animateBall(ball, point) {
   ball.animate({
     ease: "<>",
     duration: 200
-  }).center(point.x, point.y);
+  }).center(point[0], point[1]);
 }
 
 function colorBall(ball, color) {
@@ -640,7 +611,7 @@ function colorBall(ball, color) {
 function drawBall(point, canvas, color) {
   return canvas.polygon("1,0 0.707,0.707 0,1 -0.707,0.707 -1,0 -0.707,-0.707 0,-1 0.707,-0.707 1,0").size(2, 2).fill({
     color: color
-  }).center(point.x, point.y);
+  }).center(point[0], point[1]);
 }
 
 function drawAnimatedLine(pointA, pointB, canvas, border) {
@@ -648,20 +619,17 @@ function drawAnimatedLine(pointA, pointB, canvas, border) {
     ease: "<>",
     duration: 200
   }).attr({
-    x2: pointB.x,
-    y2: pointB.y
+    x2: pointB[0],
+    y2: pointB[1]
   });
 }
 
 function drawLine(pointA, pointB, canvas, border) {
-  return canvas.line(pointA.x, pointA.y, pointB.x, pointB.y).stroke(border);
+  return canvas.line(pointA[0], pointA[1], pointB[0], pointB[1]).stroke(border);
 }
 
 function getPosition(i, j) {
-  return {
-    x: (10 * i + 5),
-    y: (10 * j + 5)
-  }
+  return [10 * i + 5, 10 * j + 5];
 }
 
 function getDirectionfromKey(key, alignment) {

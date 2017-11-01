@@ -57,10 +57,10 @@ class gameConnection{
       this.offlineSingleGame.onGameInterruptFunc = onGameInterruptFunc;
       this.offlineSingleGame.onGameInfoFunc = onGameInfoFunc;
       onInitializedFunc();
-      this.offlineSingleGame.onGameUpdateFunc(this.offlineSingleGame.game.getForSending());
       this.offlineSingleGame.onGameInterruptFunc({
         msg: messages.gameInterrupt.rst.gameStart
       });
+      this.offlineSingleGame.onGameUpdateFunc(this.offlineSingleGame.game.getForSending());
       if (this.offlineSingleGame.game.activeplayer == this.offlineSingleGame.player1) { // player1 should always be the computer player
         setTimeout(this.doAIShoots.bind(this), 1000);
       }
