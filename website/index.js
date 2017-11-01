@@ -463,7 +463,7 @@ class PlayingLayout extends Layout {
     } else {
       this.alignment = 'vertical';
       this.canvas.rotate(-90, 0, 0);
-      this.canvas.scale(h_ver/(10*this.canvas.viewbox().zoom), 0, 0)
+      this.canvas.scale(h_ver / (10 * this.canvas.viewbox().zoom), 0, 0)
     }
   }
 }
@@ -540,7 +540,7 @@ function toHex(value) {
   return hex;
 }
 
-let foregroundelements = [];
+let ball;
 
 function drawBackgroundtoCanvas(canvas) {
   let h = 10;
@@ -568,15 +568,15 @@ function drawBackgroundtoCanvas(canvas) {
   let g2so = getPosition(12, 3)
   let g2sw = getPosition(11, 3)
   let border = {
-    width: 2,
+    width: 0.3,
     color: "#000000"
   }
   let player1 = {
-    width: 2,
+    width: 0.3,
     color: "#FF0000"
   }
   let player2 = {
-    width: 2,
+    width: 0.3,
     color: "#00FF00"
   }
   drawLine(nwCorner, noCorner, canvas, border);
@@ -601,74 +601,54 @@ function clearElements(elements) {
 }
 
 function drawFieldtoCanvas(canvas, game, animate) {
-  foregroundelements = clearElements(foregroundelements);
-  let background = {
-    width: 1,
-    color: "#A9D0F5"
-  }
-  let finish = animate ? game.shoots.length - 1 : game.shoots.length
-  for (let i = 0; i < finish; i++) {
-    let shoot = game.shoots[i];
-    let posA = getPosition(shoot.a.x, shoot.a.y)
-    let posB = getPosition(shoot.b.x, shoot.b.y)
-    let style = {
-      width: 2,
-      color: shoot.p
-    }
-    foregroundelements.push(drawLine(posA, posB, canvas, style));
+  if(!ball){
+    let ballPos = getPosition(game.ball.x, game.ball.y);
+    ball = drawBall(ballPos, canvas, game.activeplayer.color);
   }
   if (game.shoots.length > 0 && animate) {
     let shoot = game.shoots[game.shoots.length - 1]
     let posA = getPosition(shoot.a.x, shoot.a.y)
     let posB = getPosition(shoot.b.x, shoot.b.y)
     let style = {
-      width: 2,
+      width: 0.3,
       color: shoot.p
     }
-    let ballPos = getPosition(game.ball.x, game.ball.y);
     if (shoot.b.x == game.ball.x && shoot.b.y == game.ball.y) {
-      let line = drawLine(posA, posA, canvas, style);
-      line.animate({
-        ease: "<>",
-        duration: 200
-      }).attr({
-        x2: posB.x,
-        y2: posB.y
-      });
-      foregroundelements.push(line)
-      let ball = drawBall(posA, canvas, game.activeplayer.color);
-      ball.animate({
-        ease: "<>",
-        duration: 200
-      }).center(ballPos.x, ballPos.y);
-      foregroundelements.push(ball);
+      drawAnimatedLine(posA, posB, canvas, style);
     } else {
-      let line = drawLine(posB, posB, canvas, style);
-      line.animate({
-        ease: "<>",
-        duration: 200
-      }).attr({
-        x2: posA.x,
-        y2: posA.y
-      });
-      foregroundelements.push(line);
-      let ball = drawBall(posB, canvas, game.activeplayer.color);
-      ball.animate({
-        ease: "<>",
-        duration: 200
-      }).center(ballPos.x, ballPos.y);
-      foregroundelements.push(ball);
+      drawAnimatedLine(posB, posA, canvas, style);
     }
-  } else {
     let ballPos = getPosition(game.ball.x, game.ball.y);
-    foregroundelements.push(drawBall(ballPos, canvas, game.activeplayer.color));
+    animateBall(ball, ballPos);
+    colorBall(ball, game.activeplayer.color);
   }
+}
+
+function animateBall(ball, point){
+  ball.animate({
+    ease: "<>",
+    duration: 200
+  }).center(point.x, point.y);
+}
+
+function colorBall(ball, color){
+  ball.fill({color: color});
 }
 
 function drawBall(point, canvas, color) {
   return canvas.polygon("1,0 0.707,0.707 0,1 -0.707,0.707 -1,0 -0.707,-0.707 0,-1 0.707,-0.707 1,0").size(2, 2).fill({
     color: color
   }).center(point.x, point.y);
+}
+
+function drawAnimatedLine(pointA, pointB, canvas, border) {
+  return drawLine(pointA, pointA, canvas, border).animate({
+    ease: "<>",
+    duration: 200
+  }).attr({
+    x2: pointB.x,
+    y2: pointB.y
+  });
 }
 
 function drawLine(pointA, pointB, canvas, border) {
