@@ -601,7 +601,7 @@ function clearElements(elements) {
 }
 
 function drawFieldtoCanvas(canvas, game, animate) {
-  if(!ball){
+  if (!ball) {
     let ballPos = getPosition(game.ball.x, game.ball.y);
     ball = drawBall(ballPos, canvas, game.activeplayer.color);
   }
@@ -624,15 +624,17 @@ function drawFieldtoCanvas(canvas, game, animate) {
   }
 }
 
-function animateBall(ball, point){
+function animateBall(ball, point) {
   ball.animate({
     ease: "<>",
     duration: 200
   }).center(point.x, point.y);
 }
 
-function colorBall(ball, color){
-  ball.fill({color: color});
+function colorBall(ball, color) {
+  ball.fill({
+    color: color
+  });
 }
 
 function drawBall(point, canvas, color) {
