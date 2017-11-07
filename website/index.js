@@ -250,7 +250,6 @@ class ConnectLayout extends Layout {
       this.onButtonConnect();
     }
   }
-
   dest() {}
   onButtonBack() {
     this.layoutController.changeLayout(mainLayout.name, {
@@ -319,6 +318,10 @@ class PlayingLayout extends Layout {
     //event listener
     this.inputBack.addEventListener('click', () => this.onButtonBack());
     window.addEventListener('resize', () => this.onResize());
+    window.addEventListener('keyup', (e) => this.onKeyUp(e), false);
+    this.divGame.addEventListener('touchstart', (e) => this.onTouchDown(e), false);
+    this.divGame.addEventListener('touchmove', (e) => this.onTouchMove(e), false);
+    this.divGame.addEventListener('touchend', (e) => this.onTouchUp(e), false);
 
     //variables
     this.touchStartPos = null;
@@ -326,6 +329,8 @@ class PlayingLayout extends Layout {
 
     this.alignment = 'horizontal';
     this.graphicsElements = {};
+
+    this.gameControlsEnabled = false;
 
     //initialize site
     this.inputAgain.hidden = true;
@@ -336,7 +341,7 @@ class PlayingLayout extends Layout {
   dest() {
     this.gameConnection.disconnect();
     this.pageControls.showTitleFunc();
-    this.removeGameControls();
+    this.disableGameControls();
   }
   onButtonBack() {
     this.layoutController.changeLayout(mainLayout.name, {
@@ -371,7 +376,7 @@ class PlayingLayout extends Layout {
   }
   onGameInterrupt(interrupt) {
     if (interrupt.msg == messages.gameInterrupt.rst.gameStart) {
-      this.addGameControls();
+      this.enableGameControls();
       this.canvas.clear();
       drawBackgroundtoCanvas(this.canvas, this.graphicsElements);
       this.graphicsElements.ball = drawBall(getPosition(6, 4), this.canvas, '#000000');
@@ -379,28 +384,21 @@ class PlayingLayout extends Layout {
     } else if (interrupt.msg == messages.gameInterrupt.rst.gameEnd) {
       if (interrupt.data == 'disconnect') {
         this.pageControls.updateStatusFunc('the game ended, because someone disconnected');
-        this.removeGameControls();
+        this.disableGameControls();
         this.inputAgain.hidden = true;
       } else if (interrupt.data == 'winner') {
         this.pageControls.updateStatusFunc(interrupt.player.name + ' wins this game, congratulations!');
-        this.removeGameControls();
+        this.disableGameControls();
         this.inputAgain.hidden = false;
         this.inputAgain.addEventListener('click', () => this.gameConnection.again())
       }
     }
   }
-  addGameControls() {
-    document.addEventListener('keyup', (e) => this.onKeyUp(e), false);
-    this.divGame.addEventListener('touchstart', (e) => this.onTouchDown(e), false);
-    this.divGame.addEventListener('touchmove', (e) => this.onTouchMove(e), false);
-    this.divGame.addEventListener('touchend', (e) => this.onTouchUp(e), false);
+  enableGameControls(){
+    this.gameControlsEnabled = true;
   }
-  removeGameControls() {
-    //TODO
-    //document.removeEventListener('keypress', this.onKeyPress, false);
-    //this.divGame.removeEventListener('touchstart', this.onTouchDown, false);
-    //this.divGame.removeEventListener('touchmove', this.onTouchMove, false);
-    //this.divGame.removeEventListener('touchend', this.onTouchUp, false);
+  disableGameControls() {
+    this.gameControlsEnabled = false;
   }
   onGameInfo(info) {
     if (info.msg == messages.gameInfo.rst.again) {
@@ -408,6 +406,7 @@ class PlayingLayout extends Layout {
     }
   }
   onKeyUp(event) {
+    if (!this.gameControlsEnabled) return;
     let direction = getDirectionfromKey(event.key, this.alignment);
     if (!this.gameConnection.shoot(direction)) {
       this.pageControls.updateStatusFunc('Waiting for server..');
@@ -415,6 +414,7 @@ class PlayingLayout extends Layout {
   }
   onTouchDown(event) {
     event.preventDefault();
+    if (!this.gameControlsEnabled) return;
     this.touchStartPos = {
       x: event.touches[0].pageX,
       y: event.touches[0].pageY
@@ -422,6 +422,7 @@ class PlayingLayout extends Layout {
   }
   onTouchMove(event) {
     event.preventDefault();
+    if (!this.gameControlsEnabled) return;
     this.touchEndPos = {
       x: event.touches[event.touches.length - 1].pageX,
       y: event.touches[event.touches.length - 1].pageY
@@ -429,6 +430,7 @@ class PlayingLayout extends Layout {
   }
   onTouchUp(event) {
     event.preventDefault();
+    if (!this.gameControlsEnabled) return;
     if (this.touchStartPos && this.touchEndPos) {
       let swipe = {
         x: this.touchEndPos.x - this.touchStartPos.x,
@@ -591,8 +593,12 @@ function drawFieldtoCanvas(canvas, game, graphicsElements, animate) {
     animateBall(graphicsElements.ball, getPosition(game.ball.x, game.ball.y));
   }
   colorBall(graphicsElements.ball, game.activeplayer.color);
-  graphicsElements.goalPlayer0.attr({stroke: game.player.player0.color});
-  graphicsElements.goalPlayer1.attr({stroke: game.player.player1.color});
+  graphicsElements.goalPlayer0.attr({
+    stroke: game.player.player0.color
+  });
+  graphicsElements.goalPlayer1.attr({
+    stroke: game.player.player1.color
+  });
 }
 
 function animateBall(ball, point) {
