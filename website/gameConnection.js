@@ -108,6 +108,7 @@ class OfflineSingleGameConnection extends GameConnection {
     this.onShootResponseFunc = null;
     this.onGameInterruptFunc = null;
     this.onGameInfoFunc = null;
+    this.timeout = null;
   }
 
   initializePlayer(player, onInitializedFunc, onGameUpdateFunc, onShootResponseFunc, onGameInterruptFunc, onGameInfoFunc) {
@@ -126,7 +127,7 @@ class OfflineSingleGameConnection extends GameConnection {
     });
     this.onGameUpdateFunc(this.game.getForSending());
     if (this.game.activeplayer == this.player1) { // player1 should always be the computer player
-      setTimeout(() => this.doAIShoots(), 1000);
+      this.timeout = setTimeout(() => this.doAIShoots(), 1000);
     }
   }
 
@@ -144,7 +145,7 @@ class OfflineSingleGameConnection extends GameConnection {
         });
       }
       if (this.game.activeplayer == this.player1) { // player1 should always be the computer player
-        setTimeout(() => this.doAIShoots(), 1000);
+        this.timeout = setTimeout(() => this.doAIShoots(), 1000);
       }
     } else if (shootResult.msg == 'GameWon') {
       this.onShootResponseFunc(messages.shoot.rst.gameWon);
@@ -171,7 +172,7 @@ class OfflineSingleGameConnection extends GameConnection {
       msg: messages.gameInterrupt.rst.gameStart
     });
     if (this.game.activeplayer == this.player1) { // player1 should always be the computer player
-      setTimeout(() => this.doAIShoots(), 1000);
+      this.timeout =   setTimeout(() => this.doAIShoots(), 1000);
     }
   }
 
@@ -183,12 +184,13 @@ class OfflineSingleGameConnection extends GameConnection {
     this.onShootResponseFunc = null;
     this.onGameInterruptFunc = null;
     this.onGameInfoFunc = null;
+    clearTimeout(this.timeout);
   }
 
   doAIShoots() {
     let gameAI = new GameAI(this.game, this.player1);
     let shoot = gameAI.computeShoot().reverse();
-    setTimeout(() => this.doAIShoot(shoot), 100);
+    this.timeout = setTimeout(() => this.doAIShoot(shoot), 100);
   }
 
   doAIShoot(shoot) {
@@ -205,7 +207,7 @@ class OfflineSingleGameConnection extends GameConnection {
       });
     }
     if (shoot.length != 0) {
-      setTimeout(() => this.doAIShoot(shoot), 300);
+      this.timeout = setTimeout(() => this.doAIShoot(shoot), 300);
     }
   }
 }

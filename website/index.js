@@ -331,7 +331,7 @@ class PlayingLayout extends Layout {
     this.inputAgain.hidden = true;
     this.pageControls.hideTitleFunc();
     this.onResize();
-    this.gameConnection.initializePlayer(this.playerInfo, () => this.initialized(), (game) => this.redrawCanvas(game, false, true), (resp) => this.shootResponse(resp), (interr) => this.onGameInterrupt(interr), (info) => this.onGameInfo(info), this.gameType);
+    this.gameConnection.initializePlayer(this.playerInfo, () => this.initialized(), (game) => this.redrawCanvas(game, false, true), (resp) => this.shootResponse(resp), (interr) => this.onGameInterrupt(interr), (info) => this.onGameInfo(info));
   }
   dest() {
     this.gameConnection.disconnect();
@@ -673,6 +673,7 @@ layoutContr.registerLayout(mainLayout);
 layoutContr.registerLayout(createLayout);
 layoutContr.registerLayout(connectLayout);
 layoutContr.registerLayout(playingLayout);
+
 let par = {
   pageControls: {
     updateTitleFunc: updateTitle,
