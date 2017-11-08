@@ -547,11 +547,23 @@ function drawBackgroundtoCanvas(canvas, graphicsElements) {
     width: 0.2,
     color: "#A9D0F5"
   }
+  let delay = 0;
   for (let i = 0; i < 9; i++) {
-    canvas.line(0, 10 * i + 5, 130, 10 * i + 5).stroke(background);
+    canvas.line(0, 10 * i + 5, 0, 10 * i + 5).stroke(background).animate({
+      ease: "<>",
+      duration: 500,
+      delay: delay
+    }).plot(0, 10 * i + 5, 130, 10 * i + 5);
+    delay += 100;
   }
+  delay = 0;
   for (let i = 0; i < 13; i++) {
-    canvas.line(10 * i + 5, 0, 10 * i + 5, 90).stroke(background);
+    canvas.line(10 * i + 5, 0, 10 * i + 5, 0).stroke(background).animate({
+      ease: "<>",
+      duration: 500,
+      delay: delay
+    }).plot(10 * i + 5, 0, 10 * i + 5, 90);
+    delay += 100;
   }
   //draw border
   let noCorner = getPosition(11, 8)
