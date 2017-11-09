@@ -1,31 +1,48 @@
-var messages = new Messages();
+"use strict"
+let messages = new Messages();
+const address = '/' //'https://octaball-octaball.1d35.starter-us-east-1.openshiftapps.com/' // ''
 
-function gameConnection() {
-  this.gameID = null;
-  this.gameSocket = null;
-  this.connectedToRoom = false;
-  this.shooting = false;
-  this.gameType = null;
-  this.offlineSingleGame = null;
+class GameConnection {
+  constructor() {}
+  initializePlayer() {
+    console.error('Function not implemented');
+  }
+  shoot(direction) {
+    console.error('Function not implemented');
+  }
+  again() {
+    console.error('Function not implemented');
+  }
+  disconnect() {
+    console.error('Function not implemented');
+  }
+}
 
-  this.createID = function(onIDReadyFunc) {
-    var socket = io('https://octaball-octaball.1d35.starter-us-east-1.openshiftapps.com/');
+class OnlineGameConnection extends GameConnection {
+  constructor() {
+    super();
+    this.gameID = null;
+    this.gameSocket = null;
+    this.connectedToRoom = false;
+    this.shooting = false;
+  }
+
+  createID(onIDReadyFunc) {
+    let socket = io(address);
     socket.on(messages.connect.rsp, function() {
       socket.on(messages.createID.rsp, function(gameID) {
         socket.disconnect();
-        socket = null;
         onIDReadyFunc(gameID);
       });
       socket.emit(messages.createID.msg);
     });
   }
 
-  this.checkID = function(gameID, onIDCheckedFunc) {
-    var socket = io('https://octaball-octaball.1d35.starter-us-east-1.openshiftapps.com/');
+  checkID(gameID, onIDCheckedFunc) {
+    let socket = io(address);
     socket.on(messages.connect.rsp, function() {
       socket.on(messages.checkID.rsp, function(result) {
         socket.disconnect();
-        socket = null;
         onIDCheckedFunc(result);
       });
       socket.emit(messages.checkID.msg, gameID);
@@ -33,38 +50,21 @@ function gameConnection() {
 
   }
 
-  this.connectToRoom = function(gameID, onConnectedFunc, onRoomConnectedFunc) {
+  connectToRoom(gameID, onConnectedFunc, onRoomConnectedFunc) {
     this.gameID = gameID;
-    this.gameSocket = io('https://octaball-octaball.1d35.starter-us-east-1.openshiftapps.com/' + this.gameID);
+    this.gameSocket = io(address + this.gameID);
     this.gameSocket.on(messages.connect.rsp, onConnectedFunc);
     this.gameSocket.on(messages.roomConnected.rsp, onRoomConnectedFunc);
   }
 
-  this.initializePlayer = function(player, onInitializedFunc, onGameUpdateFunc, onShootResponseFunc, onGameInterruptFunc, onGameInfoFunc, gameType = 'online') {
-    this.gameType = gameType;
-    if (gameType == 'offlineSingle') {
-      this.offlineSingleGame = {};
-      this.offlineSingleGame.player0 = new Player();
-      this.offlineSingleGame.player0.initialize(player.name, player.color);
-      this.offlineSingleGame.player1 = new Player();
-      this.offlineSingleGame.player1.initialize('Computer', '#000000');
-      this.offlineSingleGame.game = new Game(this.offlineSingleGame.player0, this.offlineSingleGame.player1);
-      this.offlineSingleGame.onGameUpdateFunc = onGameUpdateFunc;
-      this.offlineSingleGame.onShootResponseFunc = onShootResponseFunc;
-      this.offlineSingleGame.onGameInterruptFunc = onGameInterruptFunc;
-      this.offlineSingleGame.onGameInfoFunc = onGameInfoFunc;
-      onInitializedFunc();
-      this.offlineSingleGame.onGameUpdateFunc(this.offlineSingleGame.game.getForSending());
-      this.offlineSingleGame.onGameInterruptFunc({
-        msg: messages.gameInterrupt.rst.gameStart
-      });
-    } else if (this.gameSocket && gameType == 'online') {
+  initializePlayer(player, onInitializedFunc, onGameUpdateFunc, onShootResponseFunc, onGameInterruptFunc, onGameInfoFunc) {
+    if (this.gameSocket) {
       this.gameSocket.on(messages.initialize.rsp, onInitializedFunc);
       this.gameSocket.on(messages.gameUpdate.rsp, onGameUpdateFunc);
-      this.gameSocket.on(messages.shoot.rsp, (function(msg) {
+      this.gameSocket.on(messages.shoot.rsp, (msg) => {
         this.shooting = false;
         onShootResponseFunc(msg);
-      }).bind(this));
+      });
       this.gameSocket.on(messages.gameInterrupt.rsp, onGameInterruptFunc);
       this.gameSocket.on(messages.gameInfo.rsp, onGameInfoFunc);
       this.gameSocket.emit(messages.initialize.msg, player);
@@ -73,8 +73,8 @@ function gameConnection() {
     }
   }
 
-  this.shoot = function(direction) {
-    if (this.gameType == 'online' && this.gameSocket) {
+  shoot(direction) {
+    if (this.gameSocket) {
       if (this.shooting) {
         return false;
       } else {
@@ -82,79 +82,132 @@ function gameConnection() {
         this.gameSocket.emit(messages.shoot.msg, direction);
       }
       return true;
-    } else if (this.gameType == 'offlineSingle') {
-      var shootResult = this.offlineSingleGame.game.tryShoot(direction, this.offlineSingleGame.player0); //player0 should always be the human player
-      if (shootResult.msg == 'OK') {
-        //alright shoot done
-        this.offlineSingleGame.onShootResponseFunc(messages.shoot.rst.ok);
-        this.offlineSingleGame.onGameUpdateFunc(this.offlineSingleGame.game.getForSending());
-        if (this.offlineSingleGame.game.winner != null) {
-          this.offlineSingleGame.onGameInterruptFunc({
-            msg: messages.gameInterrupt.rst.gameEnd,
-            data: 'winner',
-            player: this.offlineSingleGame.game.winner
-          });
-        }
-        if (this.offlineSingleGame.game.activeplayer == this.offlineSingleGame.player1) { // player1 should always be the computer player
-          setTimeout(this.doAIShoots.bind(this), 1000);
-        }
-      } else if (shootResult.msg == 'GameWon') {
-        this.offlineSingleGame.onShootResponseFunc(messages.shoot.rst.gameWon);
-      } else if (shootResult.msg == 'NotYourTurn') {
-        this.offlineSingleGame.onShootResponseFunc(messages.shoot.rst.notYourTurn);
-      } else if (shootResult.msg == 'ShootOccupied') {
-        this.offlineSingleGame.onShootResponseFunc(messages.shoot.rst.occupied);
-      } else if (shootResult.msg == 'Border') {
-        this.offlineSingleGame.onShootResponseFunc(messages.shoot.rst.border);
-      } else {
-        console.log('strange shoot Result: ' + shootResult);
-      }
-      return true;
     }
   }
 
-  this.doAIShoots = function() {
-    var gameAI = new GameAI(this.offlineSingleGame.game, this.offlineSingleGame.player1);
-    var shoot = gameAI.computeShoot().reverse();
-    setTimeout(this.doAIShoot.bind(this, shoot), 100);
+  again() {
+    if (this.gameSocket) {
+      this.gameSocket.emit(messages.gameInfo.msg, messages.gameInfo.rst.again);
+    }
   }
 
-  this.doAIShoot = function(shoot) {
-    var aiShootResult = this.offlineSingleGame.game.tryShoot(shoot.pop(), this.offlineSingleGame.player1);
+  disconnect() {
+    if (this.gameSocket) {
+      this.gameSocket.disconnect();
+    }
+  }
+}
+
+class OfflineSingleGameConnection extends GameConnection {
+  constructor() {
+    super();
+    this.game = null;
+    this.player0 = null;
+    this.player1 = null;
+    this.onGameUpdateFunc = null;
+    this.onShootResponseFunc = null;
+    this.onGameInterruptFunc = null;
+    this.onGameInfoFunc = null;
+    this.timeout = null;
+  }
+
+  initializePlayer(player, onInitializedFunc, onGameUpdateFunc, onShootResponseFunc, onGameInterruptFunc, onGameInfoFunc) {
+    this.player0 = new Player();
+    this.player0.initialize(player.name, player.color);
+    this.player1 = new Player();
+    this.player1.initialize('Computer', '#000000');
+    this.game = new Game(this.player0, this.player1);
+    this.onGameUpdateFunc = onGameUpdateFunc;
+    this.onShootResponseFunc = onShootResponseFunc;
+    this.onGameInterruptFunc = onGameInterruptFunc;
+    this.onGameInfoFunc = onGameInfoFunc;
+    onInitializedFunc();
+    this.onGameInterruptFunc({
+      msg: messages.gameInterrupt.rst.gameStart
+    });
+    this.onGameUpdateFunc(this.game.getForSending());
+    if (this.game.activeplayer == this.player1) { // player1 should always be the computer player
+      this.timeout = setTimeout(() => this.doAIShoots(), 1000);
+    }
+  }
+
+  shoot(direction) {
+    let shootResult = this.game.tryShoot(direction, this.player0); //player0 should always be the human player
+    if (shootResult.msg == 'OK') {
+      //alright shoot done
+      this.onShootResponseFunc(messages.shoot.rst.ok);
+      this.onGameUpdateFunc(this.game.getForSending());
+      if (this.game.winner != null) {
+        this.onGameInterruptFunc({
+          msg: messages.gameInterrupt.rst.gameEnd,
+          data: 'winner',
+          player: this.game.winner
+        });
+      }
+      if (this.game.activeplayer == this.player1) { // player1 should always be the computer player
+        this.timeout = setTimeout(() => this.doAIShoots(), 1000);
+      }
+    } else if (shootResult.msg == 'GameWon') {
+      this.onShootResponseFunc(messages.shoot.rst.gameWon);
+    } else if (shootResult.msg == 'NotYourTurn') {
+      this.onShootResponseFunc(messages.shoot.rst.notYourTurn);
+    } else if (shootResult.msg == 'ShootOccupied') {
+      this.onShootResponseFunc(messages.shoot.rst.occupied);
+    } else if (shootResult.msg == 'Border') {
+      this.onShootResponseFunc(messages.shoot.rst.border);
+    } else {
+      console.log('strange shoot Result: ' + shootResult);
+    }
+    return true;
+  }
+
+  again() {
+    if (this.game && this.game.winner) {
+      this.game = new Game(this.player0, this.player1, this.game.getOtherPlayer(this.game.winner));
+    } else {
+      this.game = new Game(this.player0, this.player1, null);
+    }
+    this.onGameUpdateFunc(this.game.getForSending());
+    this.onGameInterruptFunc({
+      msg: messages.gameInterrupt.rst.gameStart
+    });
+    if (this.game.activeplayer == this.player1) { // player1 should always be the computer player
+      this.timeout =   setTimeout(() => this.doAIShoots(), 1000);
+    }
+  }
+
+  disconnect() {
+    this.game = null;
+    this.player0 = null;
+    this.player1 = null;
+    this.onGameUpdateFunc = null;
+    this.onShootResponseFunc = null;
+    this.onGameInterruptFunc = null;
+    this.onGameInfoFunc = null;
+    clearTimeout(this.timeout);
+  }
+
+  doAIShoots() {
+    let gameAI = new GameAI(this.game, this.player1);
+    let shoot = gameAI.computeShoot().reverse();
+    this.timeout = setTimeout(() => this.doAIShoot(shoot), 100);
+  }
+
+  doAIShoot(shoot) {
+    let aiShootResult = this.game.tryShoot(shoot.pop(), this.player1);
     if (aiShootResult.msg != 'OK' && aiShootResult.msg != 'GameWon') {
       console.log('strange ai shoot');
     }
-    this.offlineSingleGame.onGameUpdateFunc(this.offlineSingleGame.game.getForSending());
-    if (this.offlineSingleGame.game.winner != null) {
-      this.offlineSingleGame.onGameInterruptFunc({
+    this.onGameUpdateFunc(this.game.getForSending());
+    if (this.game.winner != null) {
+      this.onGameInterruptFunc({
         msg: messages.gameInterrupt.rst.gameEnd,
         data: 'winner',
-        player: this.offlineSingleGame.game.winner
+        player: this.game.winner
       });
     }
-    if (shoot.length != 0){
-      setTimeout(this.doAIShoot.bind(this, shoot), 300);
-    }
-
-  }
-
-  this.again = function() {
-    if (this.gameType == 'online' && this.gameSocket) {
-      this.gameSocket.emit(messages.gameInfo.msg, messages.gameInfo.rst.again);
-    } else if (this.gameType == 'offlineSingle') {
-      this.offlineSingleGame.game = new Game(this.offlineSingleGame.player0, this.offlineSingleGame.player1);
-      this.offlineSingleGame.onGameUpdateFunc(this.offlineSingleGame.game.getForSending());
-      this.offlineSingleGame.onGameInterruptFunc({
-        msg: messages.gameInterrupt.rst.gameStart
-      });
-    }
-  }
-
-  this.disconnect = function() {
-    if (gameType = 'online' && this.gameSocket) {
-      this.gameSocket.disconnect();
-    } else if (gameType == 'offlineSingle') {
-      this.offlineSingleGame = null;
+    if (shoot.length != 0) {
+      this.timeout = setTimeout(() => this.doAIShoot(shoot), 300);
     }
   }
 }
