@@ -391,8 +391,8 @@ class PlayingLayout extends Layout {
         this.disableGameControls();
         this.inputAgain.hidden = false;
         this.inputAgain.addEventListener('click', () => {
-          this.gameConnection.again();
           this.pageControls.updateStatusFunc("waiting for other player");
+          this.gameConnection.again();
         })
       }
     }
