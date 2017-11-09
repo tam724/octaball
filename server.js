@@ -38,10 +38,10 @@ function startNewGame(gameString) {
   else{
     games[gameString].game = new Octaball.Game(games[gameString].player0, games[gameString].player1, null);
   }
-  games[gameString].io.emit(Messages.gameUpdate.rsp, games[gameString].game.getForSending());
   games[gameString].io.emit(Messages.gameInterrupt.rsp, {
     msg: Messages.gameInterrupt.rst.gameStart
   });
+  games[gameString].io.emit(Messages.gameUpdate.rsp, games[gameString].game.getForSending());
 }
 
 function createNewGame() {
