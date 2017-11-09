@@ -336,7 +336,7 @@ class PlayingLayout extends Layout {
     this.inputAgain.hidden = true;
     this.pageControls.hideTitleFunc();
     this.onResize();
-    this.gameConnection.initializePlayer(this.playerInfo, () => this.initialized(), (game) => this.redrawCanvas(game, false, true), (resp) => this.shootResponse(resp), (interr) => this.onGameInterrupt(interr), (info) => this.onGameInfo(info));
+    this.gameConnection.initializePlayer(this.playerInfo, () => this.initialized(), (game) => this.redrawCanvas(game), (resp) => this.shootResponse(resp), (interr) => this.onGameInterrupt(interr), (info) => this.onGameInfo(info));
   }
   dest() {
     this.gameConnection.disconnect();
@@ -352,9 +352,9 @@ class PlayingLayout extends Layout {
   initialized() {
     this.pageControls.updateStatusFunc('waiting for other player');
   }
-  redrawCanvas(game, updateBackgroud, animate) {
+  redrawCanvas(game) {
     this.currentGame = game;
-    drawFieldtoCanvas(this.canvas, game, this.graphicsElements, animate);
+    drawFieldtoCanvas(this.canvas, game, this.graphicsElements);
     if (game.activeplayer.name == this.playerInfo.name) {
       this.pageControls.updateStatusFunc('it\'s your turn');
     } else {
@@ -390,11 +390,14 @@ class PlayingLayout extends Layout {
         this.pageControls.updateStatusFunc(interrupt.player.name + ' wins this game, congratulations!');
         this.disableGameControls();
         this.inputAgain.hidden = false;
-        this.inputAgain.addEventListener('click', () => this.gameConnection.again())
+        this.inputAgain.addEventListener('click', () => {
+          this.gameConnection.again();
+          this.pageControls.updateStatusFunc("waiting for other player");
+        })
       }
     }
   }
-  enableGameControls(){
+  enableGameControls() {
     this.gameControlsEnabled = true;
   }
   disableGameControls() {
@@ -548,13 +551,14 @@ function drawBackgroundtoCanvas(canvas, graphicsElements) {
     color: "#A9D0F5"
   }
   let delay = 0;
+  let animationTime = 1000;
   for (let i = 0; i < 9; i++) {
     canvas.line(0, 10 * i + 5, 0, 10 * i + 5).stroke(background).animate({
       ease: "<>",
       duration: 500,
       delay: delay
     }).plot(0, 10 * i + 5, 130, 10 * i + 5);
-    delay += 100;
+    delay += animationTime / 9;
   }
   delay = 0;
   for (let i = 0; i < 13; i++) {
@@ -563,7 +567,7 @@ function drawBackgroundtoCanvas(canvas, graphicsElements) {
       duration: 500,
       delay: delay
     }).plot(10 * i + 5, 0, 10 * i + 5, 90);
-    delay += 100;
+    delay += animationTime / 13;
   }
   //draw border
   let noCorner = getPosition(11, 8)
@@ -580,16 +584,29 @@ function drawBackgroundtoCanvas(canvas, graphicsElements) {
   let g2sw = getPosition(11, 3)
   let border = {
     width: 0.3,
-    color: "#000000"
+    color: "#000000",
+    opacity: 0.0
   }
-  canvas.polyline([g1no, nwCorner, noCorner, g2nw]).fill('none').stroke(border);
-  canvas.polyline([g1so, swCorner, soCorner, g2sw]).fill('none').stroke(border);
-  graphicsElements.goalPlayer0 = canvas.polyline([g1no, g1nw, g1sw, g1so]).fill('none').stroke(border);
-  graphicsElements.goalPlayer1 = canvas.polyline([g2nw, g2no, g2so, g2sw]).fill('none').stroke(border);
+  let borderAfter = {
+    'stroke-opacity': 1.0
+  }
+  drawAnimatedPolyline([g1no, nwCorner, noCorner, g2nw], canvas, border, borderAfter);
+  drawAnimatedPolyline([g1so, swCorner, soCorner, g2sw], canvas, border, borderAfter);
+  graphicsElements.goalPlayer0 = drawAnimatedPolyline([g1no, g1nw, g1sw, g1so], canvas, border, borderAfter);
+  graphicsElements.goalPlayer1 = drawAnimatedPolyline([g2nw, g2no, g2so, g2sw], canvas, border, borderAfter);
 }
 
-function drawFieldtoCanvas(canvas, game, graphicsElements, animate) {
-  if (game.shoots.length > 0 && animate) {
+function drawAnimatedPolyline(points, canvas, before, after) {
+  let line = canvas.polyline(points).fill('none').stroke(before);
+  line.animate({
+    ease: "<>",
+    duration: 2000
+  }).attr(after);
+  return line;
+}
+
+function drawFieldtoCanvas(canvas, game, graphicsElements) {
+  if (game.shoots.length > 0) {
     let shoot = game.shoots[game.shoots.length - 1]
     let posA = getPosition(shoot.a.x, shoot.a.y)
     let posB = getPosition(shoot.b.x, shoot.b.y)
@@ -605,6 +622,7 @@ function drawFieldtoCanvas(canvas, game, graphicsElements, animate) {
     animateBall(graphicsElements.ball, getPosition(game.ball.x, game.ball.y));
   }
   colorBall(graphicsElements.ball, game.activeplayer.color);
+  //HACK should be in an initialization step (but refactoring of server communication necessary)
   graphicsElements.goalPlayer0.attr({
     stroke: game.player.player0.color
   });
