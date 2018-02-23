@@ -3,10 +3,9 @@ class Game {
   constructor(player0, player1, startplayer) {
     this.player0 = player0;
     this.player1 = player1;
-    if(startplayer){
+    if (startplayer) {
       this.activeplayer = startplayer;
-    }
-    else{
+    } else {
       this.activeplayer = Math.random() < 0.5 ? player0 : player1;
     }
     this.points = this.initPoints();
@@ -76,81 +75,50 @@ class Game {
     }
   }
 
-  isValidShoot(direction) {
-    if (this.ball.point[direction] != null) {
-      if (this.ball.point[direction].player == null) {
-        return {
-          msg: 'OK'
-        };
-      } else {
-        return {
-          msg: 'ShootOccupied',
-          p: this.ball.point[direction].player.name
-        };
-      }
-    } else {
-      return {
-        msg: 'Border'
-      };
+  isValidShoot(direction, player) {
+    if (this.ball.point[direction] == null){ //there is no shoot
+      return false;
     }
+    if (this.ball.point[direction].player != null) { //shoot is already occupied
+      return false;
+    }
+    if (this.getWinner()) { //game is already won
+      return false;
+    }
+    if (this.activeplayer != player){ //it is not the players turn
+      return false;
+    }
+    return true;
   }
 
   tryShoot(direction, player) {
-    if (this.winner) {
-      return {
-        msg: 'GameWon',
-        p: this.winner.name
-      };
-    }
-    if (this.activeplayer != player) {
-      return {
-        msg: 'NotYourTurn',
-        p: this.activeplayer.name
-      };
-    }
-    let shootResult = this.isValidShoot(direction);
-    if (shootResult.msg != 'OK') {
-      return shootResult;
-    }
-
-    if (this.activeplayer == player && shootResult.msg == 'OK' && !this.winner) {
+    let valid = this.isValidShoot(direction, player);
+    if(valid){
       // actual shooting
       this.ball.point[direction].player = player;
       this.occpShoots.push(this.ball.point[direction]);
       this.ball.point = this.ball.point[direction].getOtherPoint(this.ball.point);
       //check for winner
-      this.testWinner();
       if (this.ball.point.occupiedShoots().length == 1 && this.ball.point.validDirections().length == 8) {
         //player change if the active player is the first at a specific point (occupied == 1) and it is not the border (valid == 8)
         this.activeplayer = this.getOtherPlayer(this.activeplayer);
       }
     }
-    return {
-      msg: 'OK',
-      p: this.activeplayer.name
-    };
+    return valid
   }
 
-  testWinner() {
+  getWinner() {
     if (this.ball.point.x == 0) {
-      this.winner = this.player1;
-      return true;
+      return this.player1;
     } else if (this.ball.point.x == 12) {
-      this.winner = this.player0;
-      return true;
+      return this.player0;
     } else if (this.ball.point.validShoots().length == this.ball.point.occupiedShoots().length) {
-      this.winner = this.getOtherPlayer(this.activeplayer);
-      return true;
+      return this.getOtherPlayer(this.activeplayer);
     }
-    return false;
   }
 
   getActivePlayer() {
     return this.activeplayer;
-  }
-
-  getWinner() {
-    return this.winner;
   }
 
   getForSending() {
@@ -358,20 +326,11 @@ class Shoot {
 }
 
 class Player {
-  constructor() {
-    this.color = null;
-    this.name = null;
-    this.connected = false;
-    this.initialized = false;
+  constructor(name, color) {
+    this.color = color;
+    this.name = name;
     this.again = false;
   }
-
-  initialize(name, color) {
-    this.name = name;
-    this.color = color;
-    this.initialized = true;
-  }
-
 }
 
 class Ball {

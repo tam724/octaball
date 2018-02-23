@@ -7,7 +7,7 @@ function Messages(){
   this.gameUpdate = {rsp: 'gameUpdate'};
   this.gameInterrupt = {rsp: 'gameInterrupt', rst: {gameStart: 'gameStart', gameEnd: 'gameEnd'}}; //interrupts can contain more information..
   this.gameInfo = {msg: 'gameInfo', rsp: 'gameInfo', rst:{again:'again'}};
-  this.shoot = {msg: 'shoot', rsp: 'shoot', rst: {ok: 'OK', gameWon: 'gameWon', notYourTurn: 'notYourTurn', occupied: 'shootOccupied', border: 'border'}};
+  this.shoot = {msg: 'shoot', rsp: 'shoot', rst: {ok: 'OK', nok: 'nok'}};
 }
 
 //export only in node.js
