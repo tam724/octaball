@@ -1,12 +1,12 @@
 "use strict"
-window.onerror = function(messageOrEvent, source, lineno, colno, error) {
-  if (confirm('on snap!\nyou just found an error\ndo you want to send it to the developer?')) {
-    let body = document.getElementById('body');
-    body.innerHTML = 'open a new issue on <a href="http://www.github.com/tam724/octaball/issues">github</a> or send me an <a href="mailto:tamme-c@gmx.de?Subject=octaball error&Body=' + error.stack + '">email</a> (tamme-c@gmx.de): </br></br>'
-    body.innerHTML += error.stack;
-  }
-  return false;
-}
+// window.onerror = function(messageOrEvent, source, lineno, colno, error) {
+//   if (confirm('on snap!\nyou just found an error\ndo you want to send it to the developer?')) {
+//     let body = document.getElementById('body');
+//     body.innerHTML = 'open a new issue on <a href="http://www.github.com/tam724/octaball/issues">github</a> or send me an <a href="mailto:tamme-c@gmx.de?Subject=octaball error&Body=' + error.stack + '">email</a> (tamme-c@gmx.de): </br></br>'
+//     body.innerHTML += error.stack;
+//   }
+//   return false;
+// }
 /** layouts */
 // layout welcome
 class WelcomeLayout extends Layout {
@@ -120,9 +120,13 @@ class MainLayout extends Layout {
   }
   dest() {}
   onButtonCreate() {
-    this.layoutController.changeLayout(createLayout.name, {
-      pageControls: this.pageControls,
-      playerInfo: this.playerInfo
+    let gameConnection = new OnlineGameConnection();
+    gameConnection.createID((gameID) => {
+      this.layoutController.changeLayout(playingLayout.name, {
+        pageControls: this.pageControls,
+        playerInfo: this.playerInfo,
+        gameID: gameID
+      });
     });
   }
   onButtonConnect() {
@@ -145,77 +149,7 @@ class MainLayout extends Layout {
     })
   }
 }
-// layout create
-class CreateLayout extends Layout {
-  constructor(lytCtr) {
-    super('create', 'website/layout_create.html', lytCtr);
-  }
-  init(par) {
-    // init
-    // html elements
-    this.inputGameId = document.getElementById('input_game_id');
-    this.inputBack = document.getElementById('input_back');
-    this.divLoader = document.getElementById('div_loader');
-    this.aShareWhatsapp = document.getElementById('a_share_whatsapp');
-    this.aShareTelegram = document.getElementById('a_share_telegram');
-    this.aShareMail = document.getElementById('a_share_mail');
 
-    //site controls
-    this.pageControls = par.pageControls;
-    this.playerInfo = par.playerInfo;
-
-    //event listener
-    this.inputBack.addEventListener('click', () => this.onButtonBack());
-    //variables
-
-    //initialize site
-    this.pageControls.updateStatusFunc('creating a new game for you..');
-    this.divLoader.style.borderTopColor = this.playerInfo.color;
-    this.inputGameId.readOnly = true;
-    this.aShareWhatsapp.hidden = true;
-    this.aShareTelegram.hidden = true;
-    this.aShareMail.hidden = true;
-    this.gameConnection = new OnlineGameConnection();
-    this.createID();
-  }
-  dest() {}
-  onButtonBack() {
-    this.gameConnection.disconnect();
-    this.layoutController.changeLayout(mainLayout.name, {
-      pageControls: this.pageControls,
-      playerInfo: this.playerInfo
-    });
-  }
-  createID() {
-    this.gameConnection.createID((gameID) => this.onIDCreated(gameID));
-  }
-  onIDCreated(gameID) {
-    this.gameConnection.connectToRoom(gameID, () => this.onConnectedToRoom(), () => this.onRoomConnected());
-  }
-  onConnectedToRoom() {
-    //this.layoutController.changeLayout()
-    this.inputGameId.value = this.gameConnection.gameID;
-    this.pageControls.updateHashFunc(this.gameConnection.gameID);
-    this.divLoader.hidden = true;
-    let shareMessage = encodeURI('Do you want to play octaball with me? Click ' + window.location.href);
-    shareMessage = shareMessage.replace('#', '%23');
-    this.aShareWhatsapp.href = 'whatsapp://send?text=' + shareMessage;
-    this.aShareTelegram.href = "tg:msg?text=" + shareMessage;
-    this.aShareMail.href = 'mailto:?subject=Octaball&body=' + shareMessage;
-    this.aShareWhatsapp.hidden = false;
-    this.aShareTelegram.hidden = false;
-    this.aShareMail.hidden = false;
-    this.pageControls.updateStatusFunc('share this gameID with your friend');
-  }
-  onRoomConnected() {
-    //called when the room is filled with 2 people
-    this.layoutController.changeLayout(playingLayout.name, {
-      pageControls: this.pageControls,
-      playerInfo: this.playerInfo,
-      gameConnection: this.gameConnection
-    });
-  }
-}
 // layout connect
 class ConnectLayout extends Layout {
   constructor(lytCtr) {
@@ -271,7 +205,11 @@ class ConnectLayout extends Layout {
     if (result == messages.checkID.rst.ok) {
       this.divLoader.hidden = true;
       this.pageControls.updateStatusFunc('connecting to game');
-      this.gameConnection.connectToRoom(this.inputGameId.value, () => this.onConnectedToRoom(), () => this.onRoomConnected());
+      this.layoutController.changeLayout(playingLayout.name, {
+        pageControls: this.pageControls,
+        playerInfo: this.playerInfo,
+        gameID: this.inputGameId.value
+      });
     } else if (result == messages.checkID.rst.error) {
       this.inputGameId.readOnly = false;
       this.divLoader.hidden = true;
@@ -301,6 +239,11 @@ class PlayingLayout extends Layout {
     this.divGame = document.getElementById('div_game');
     this.inputBack = document.getElementById('input_back');
     this.inputAgain = document.getElementById('input_again');
+
+    this.inputGameId = document.getElementById('input_game_id');
+    this.aShareWhatsapp = document.getElementById('a_share_whatsapp');
+    this.aShareTelegram = document.getElementById('a_share_telegram');
+    this.aShareMail = document.getElementById('a_share_mail');
     this.canvas = SVG("div_game");
     this.canvas.viewbox(0, 0, 130, 90);
 
@@ -308,7 +251,6 @@ class PlayingLayout extends Layout {
     //site controls
     this.pageControls = par.pageControls;
     this.playerInfo = par.playerInfo;
-    this.gameConnection = par.gameConnection;
     if (par.gameType) {
       this.gameType = par.gameType;
     } else {
@@ -332,11 +274,20 @@ class PlayingLayout extends Layout {
 
     this.gameControlsEnabled = false;
 
+    this.gameConnection = new OnlineGameConnection();
+
     //initialize site
     this.inputAgain.hidden = true;
+    this.pageControls.updateHashFunc(par.gameID);
+    let shareMessage = encodeURI('Do you want to play octaball with me? Click ' + window.location.href);
+    shareMessage = shareMessage.replace('#', '%23');
+    this.aShareWhatsapp.href = 'whatsapp://send?text=' + shareMessage;
+    this.aShareTelegram.href = "tg:msg?text=" + shareMessage;
+    this.aShareMail.href = 'mailto:?subject=Octaball&body=' + shareMessage;
+    this.pageControls.updateStatusFunc('share this gameID with your friend');
     this.pageControls.hideTitleFunc();
     this.onResize();
-    this.gameConnection.initializePlayer(this.playerInfo, () => this.initialized(), (game) => this.redrawCanvas(game), (resp) => this.shootResponse(resp), (interr) => this.onGameInterrupt(interr), (info) => this.onGameInfo(info));
+    this.gameConnection.connectToSession(par.gameID, this.playerInfo, () => this.initialized(), (game) => this.redrawCanvas(game), (resp) => this.shootResponse(resp), (interr) => this.onGameInterrupt(interr), (info) => this.onGameInfo(info));
   }
   dest() {
     this.gameConnection.disconnect();
@@ -364,14 +315,8 @@ class PlayingLayout extends Layout {
   shootResponse(response) {
     if (response == messages.shoot.rst.ok) {
       //well done
-    } else if (response == messages.shoot.rst.gameWon) {
-      console.log(messages.shoot.rst.gameWon);
-    } else if (response == messages.shoot.rst.notYourTurn) {
-      this.pageControls.updateStatusFunc('it\'s not your turn');
-    } else if (response == messages.shoot.rst.occupied) {
-      this.pageControls.updateStatusFunc('shoot already occupied');
-    } else if (response == messages.shoot.rst.border) {
-      this.pageControls.updateStatusFunc('shoot over border');
+    } else if (response == messages.shoot.rst.nok) {
+      this.pageControls.updateStatusFunc('shoot not allowed');
     }
   }
   onGameInterrupt(interrupt) {
@@ -391,8 +336,8 @@ class PlayingLayout extends Layout {
         this.disableGameControls();
         this.inputAgain.hidden = false;
         this.inputAgain.addEventListener('click', () => {
-          this.gameConnection.again();
           this.pageControls.updateStatusFunc("waiting for other player");
+          this.gameConnection.again();
         })
       }
     }
@@ -404,6 +349,7 @@ class PlayingLayout extends Layout {
     this.gameControlsEnabled = false;
   }
   onGameInfo(info) {
+    console.log(info)
     if (info.msg == messages.gameInfo.rst.again) {
       this.pageControls.updateStatusFunc(info.player + ' wants to play again');
     }
@@ -607,19 +553,38 @@ function drawAnimatedPolyline(points, canvas, before, after) {
 
 function drawFieldtoCanvas(canvas, game, graphicsElements) {
   if (game.shoots.length > 0) {
-    let shoot = game.shoots[game.shoots.length - 1]
-    let posA = getPosition(shoot.a.x, shoot.a.y)
-    let posB = getPosition(shoot.b.x, shoot.b.y)
-    let style = {
-      width: 0.3,
-      color: shoot.p
+    if(game.redraw){
+      for (let shoot of game.shoots){
+        let posA = getPosition(shoot.a.x, shoot.a.y)
+        let posB = getPosition(shoot.b.x, shoot.b.y)
+        let style = {
+          width: 0.3,
+          color: shoot.p
+        }
+        if (shoot.b.x == game.ball.x && shoot.b.y == game.ball.y) {
+          drawLine(posA, posB, canvas, style);
+        } else {
+          drawLine(posB, posA, canvas, style);
+        }
+        let ballPos = getPosition(game.ball.x, game.ball.y);
+        graphicsElements.ball.center(ballPos[0], ballPos[1]);
+      }
     }
-    if (shoot.b.x == game.ball.x && shoot.b.y == game.ball.y) {
-      drawAnimatedLine(posA, posB, canvas, style);
-    } else {
-      drawAnimatedLine(posB, posA, canvas, style);
+    else{
+      let shoot = game.shoots[game.shoots.length - 1]
+      let posA = getPosition(shoot.a.x, shoot.a.y)
+      let posB = getPosition(shoot.b.x, shoot.b.y)
+      let style = {
+        width: 0.3,
+        color: shoot.p
+      }
+      if (shoot.b.x == game.ball.x && shoot.b.y == game.ball.y) {
+        drawAnimatedLine(posA, posB, canvas, style);
+      } else {
+        drawAnimatedLine(posB, posA, canvas, style);
+      }
+      animateBall(graphicsElements.ball, getPosition(game.ball.x, game.ball.y));
     }
-    animateBall(graphicsElements.ball, getPosition(game.ball.x, game.ball.y));
   }
   colorBall(graphicsElements.ball, game.activeplayer.color);
   //HACK should be in an initialization step (but refactoring of server communication necessary)
@@ -700,13 +665,11 @@ function getDirectionfromKey(key, alignment) {
 let layoutContr = new LayoutController('div_parent');
 let welcomeLayout = new WelcomeLayout(layoutContr);
 let mainLayout = new MainLayout(layoutContr);
-let createLayout = new CreateLayout(layoutContr);
 let connectLayout = new ConnectLayout(layoutContr);
 let playingLayout = new PlayingLayout(layoutContr);
 
 layoutContr.registerLayout(welcomeLayout);
 layoutContr.registerLayout(mainLayout);
-layoutContr.registerLayout(createLayout);
 layoutContr.registerLayout(connectLayout);
 layoutContr.registerLayout(playingLayout);
 

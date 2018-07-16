@@ -18,6 +18,184 @@ http.listen(8080, function() {
 /** game handling */
 let games = {};
 
+const ROLE_SPECTATOR = 0
+const ROLE_PLAYER = 1
+
+class Member {
+  constructor(socket, session) {
+    this.role = ROLE_SPECTATOR;
+    this.socket = socket;
+    this.session = session;
+    this.player = null
+    this.socket.on('disconnect', () => this.disconnect());
+    this.socket.on('initialize', (data) => this.initialize(data.role, data.name, data.color));
+    this.socket.on(Messages.shoot.msg, (dir) => this.tryShoot(dir));
+    this.socket.on(Messages.gameInfo.msg, (info) => this.gameInfo(info));
+  }
+
+  gameInfo(info) {
+    // if (this.game) {
+    //   if (info == Messages.gameInfo.rst.again) {
+    //     this.log('again')
+    //     if (this.game.getWinner()) {
+    //       player.again = true;
+    //       socket.broadcast.emit(Messages.gameInfo.rsp, {
+    //         msg: Messages.gameInfo.rst.again,
+    //         player: player.name
+    //       });
+    //       if (this.game.player0.again && this.game.player1.again) {
+    //         this.player0.again = false;
+    //         this.player1.again = false;
+    //         startNewGame(this.gameString);
+    //       }
+    //     }
+    //   }
+    // }
+  }
+
+  setRole(role) {
+    if (role == ROLE_PLAYER && this.role == ROLE_SPECTATOR) {
+      if (this.session.hasTwoPlayers()) {
+        this.session.log("role not allowed, session already has two players")
+        this.role = ROLE_SPECTATOR;
+      } else {
+        this.role = role;
+      }
+    } else {
+      this.role = role;
+    }
+    if (this.role == ROLE_SPECTATOR) {
+      this.socket.emit(Messages.gameInterrupt.rsp, {
+        msg: Messages.gameInterrupt.rst.gameStart
+      });
+      let game = this.session.game.getForSending();
+      game.redraw = true;
+      this.socket.emit(Messages.gameUpdate.rsp, game);
+    }
+  }
+
+  tryShoot(dir) {
+    if (this.role == ROLE_PLAYER) {
+      let valid = this.session.tryShoot(dir, this.player);
+      if (valid) {
+        this.socket.emit(Messages.shoot.rsp, Messages.shoot.rst.ok);
+        return;
+      }
+    }
+    this.socket.emit(Messages.shoot.rsp, Messages.shoot.rst.nok);
+  }
+
+  disconnect() {
+    this.session.onMemberDisconnected(this);
+  }
+
+  initialize(role, name, color) {
+    console.log(role + " " + name + " " + color);
+    this.player = new Octaball.Player(name, color);
+    this.setRole(role);
+    this.session.onMemberInitialized(this);
+  }
+}
+
+class Session {
+  constructor(gameString) {
+    this.game = null;
+    this.gameString = gameString;
+    this.members = [];
+    this.io = io.of('/' + gameString)
+    this.io.on('connection', (socket) => this.onNewConnection(socket))
+  }
+
+  onNewConnection(socket) {
+    //a new player wants to connect and initialize
+    this.log("got new connection");
+    this.members.push(new Member(socket, this));
+  }
+
+  getPlayers() {
+    return this.members.filter(m => m.role == ROLE_PLAYER);
+  }
+
+  getNumberOfPlayers() {
+    return this.getPlayers().length;
+  }
+
+  getNumberOfMembers() {
+    return this.members.length;
+  }
+
+  hasTwoPlayers() {
+    return this.getNumberOfPlayers() == 2;
+  }
+
+  hasGameRunning() {
+    return this.game && !this.game.getWinner()
+  }
+
+  tryShoot(direction, player) {
+    this.log(player.name + ' trying to shoot in ' + direction);
+    if (this.hasGameRunning()) {
+      let valid = this.game.tryShoot(direction, player);
+      if (valid) {
+        this.io.emit(Messages.gameUpdate.rsp, this.game.getForSending());
+        let winner = this.game.getWinner()
+        if (winner != null) {
+          this.io.emit(Messages.gameInterrupt.rsp, {
+            msg: Messages.gameInterrupt.rst.gameEnd,
+            data: 'winner',
+            player: winner
+          });
+        }
+        return true;
+      }
+    }
+    return false;
+  }
+
+  onMemberDisconnected(member) {
+    let idx = this.members.indexOf(member);
+    if (idx > -1) {
+      this.members.splice(idx, 1);
+    }
+    if (!this.hasTwoPlayers()) {
+      this.log('player disconnected, ending the game');
+      this.io.emit(Messages.gameInterrupt.rsp, {
+        msg: Messages.gameInterrupt.rst.gameEnd,
+        data: 'disconnect'
+      });
+    }
+    if (this.members.length == 0) {
+      this.log('deleting');
+      delete games[this.gameString];
+      delete io.nsps['/' + this.gameString];
+    }
+  }
+
+  onMemberInitialized(member) {
+    //check if there are enough player to start a game
+    if (this.hasTwoPlayers() && !this.hasGameRunning()) {
+      let members = this.getPlayers();
+      this.startNewGame(members[0].player, members[1].player);
+    }
+  }
+
+  startNewGame(player0, player1) {
+    if (this.game && this.game.getWinner()) {
+      this.game = new Octaball.Game(player0, player1, this.game.getOtherPlayer(this.game.getWinner()));
+    } else {
+      this.game = new Octaball.Game(player0, player1, null);
+    }
+    this.io.emit(Messages.gameInterrupt.rsp, {
+      msg: Messages.gameInterrupt.rst.gameStart
+    });
+    this.io.emit(Messages.gameUpdate.rsp, this.game.getForSending());
+  }
+
+  log(data) {
+    console.log(this.gameString + ": " + data)
+  }
+}
+
 function makeRandomGameString(length) {
   let gameString;
   do {
@@ -31,134 +209,17 @@ function makeRandomGameString(length) {
   return gameString;
 }
 
-function startNewGame(gameString) {
-  if(games[gameString].game && games[gameString].game.winner){
-    games[gameString].game = new Octaball.Game(games[gameString].player0, games[gameString].player1, games[gameString].game.getOtherPlayer(games[gameString].game.winner));
-  }
-  else{
-    games[gameString].game = new Octaball.Game(games[gameString].player0, games[gameString].player1, null);
-  }
-  games[gameString].io.emit(Messages.gameInterrupt.rsp, {
-    msg: Messages.gameInterrupt.rst.gameStart
-  });
-  games[gameString].io.emit(Messages.gameUpdate.rsp, games[gameString].game.getForSending());
-}
-
 function createNewGame() {
   let gameString = makeRandomGameString(5);
   console.log('Creating new game.. ' + gameString);
-  games[gameString] = {
-    player0: new Octaball.Player(),
-    player1: new Octaball.Player(),
-    game: null
-  };
-  games[gameString].io = io.of('/' + gameString);
-  games[gameString].io.on('connection', function(socket) {
-    //a new player wants to connect and initialize
-    let player = null;
-    if (!games[gameString].player0.connected) {
-      //if there is no player0 connected, connect this player to player0
-      player = games[gameString].player0;
-      player.connected = true;
-    } else if (!games[gameString].player1.connected) {
-      //if there is no player1 connected, connect this player to player1
-      player = games[gameString].player1;
-      player.connected = true;
-    } else {
-      //else there are already two player in this game
-      socket.emit( Messages.octaballError, 'game is already full');
-    }
-
-    if (games[gameString].player0.connected && games[gameString].player1.connected) {
-      games[gameString].io.emit(Messages.roomConnected.rsp);
-    }
-
-    socket.on('disconnect', function() {
-      if (player && games[gameString]) {
-        console.log(gameString + ':' + player.name + ' disconnected, ending the game');
-        games[gameString].io.emit(Messages.gameInterrupt.rsp, {
-          msg: Messages.gameInterrupt.rst.gameEnd,
-          data: 'disconnect'
-        });
-        player.connected = false;
-      }
-      if (games[gameString] && (games[gameString].player0.connected == false || games[gameString].player1.connected == false)) {
-        console.log(gameString + ': deleting');
-        delete games[gameString];
-        delete io.nsps['/' + gameString];
-      }
-    });
-
-    socket.on(Messages.initialize.msg, function(ply) {
-      if (player && games[gameString]) {
-        player.initialize(ply.name, ply.color);
-        console.log(gameString + ':' + player.name + ' initialized with color ' + player.color);
-        socket.emit(Messages.initialize.rsp);
-
-        if (games[gameString].player0.initialized && games[gameString].player1.initialized) {
-          //if there are two initialized players, start the game
-          console.log(gameString + ': starting the game');
-          startNewGame(gameString);
-        }
-      }
-    });
-
-    socket.on(Messages.shoot.msg, function(direction) {
-      console.log(gameString + ': ' + player.name + ' trying to shoot in ' + direction);
-      if (games[gameString] && games[gameString].game) {
-        let shootResult = games[gameString].game.tryShoot(direction, player);
-        if (shootResult.msg == 'OK') {
-          //alright shoot done
-          socket.emit(Messages.shoot.rsp, Messages.shoot.rst.ok);
-          games[gameString].io.emit(Messages.gameUpdate.rsp, games[gameString].game.getForSending());
-          if (games[gameString].game.winner != null) {
-            games[gameString].io.emit(Messages.gameInterrupt.rsp, {
-              msg: Messages.gameInterrupt.rst.gameEnd,
-              data: 'winner',
-              player: games[gameString].game.winner
-            });
-          }
-        } else if (shootResult.msg == 'GameWon') {
-          socket.emit(Messages.shoot.rsp, Messages.shoot.rst.gameWon);
-        } else if (shootResult.msg == 'NotYourTurn') {
-          socket.emit(Messages.shoot.rsp, Messages.shoot.rst.notYourTurn);
-        } else if (shootResult.msg == 'ShootOccupied') {
-          socket.emit(Messages.shoot.rsp, Messages.shoot.rst.occupied);
-        } else if (shootResult.msg == 'Border') {
-          socket.emit(Messages.shoot.rsp, Messages.shoot.rst.border);
-        } else {
-          console.log('strange shoot Result: ' + shootResult);
-          socket.emit(Messages.shoot.rsp, shootResult);
-        }
-      }
-    });
-
-    socket.on(Messages.gameInfo.msg, function(info) {
-      if (games[gameString] && games[gameString].game) {
-        if (info == Messages.gameInfo.rst.again) {
-          if (games[gameString].game.winner) {
-            player.again = true;
-            socket.broadcast.emit(Messages.gameInfo.rsp, {
-              msg: Messages.gameInfo.rst.again,
-              player: player.name
-            });
-            if (games[gameString].game.player0.again && games[gameString].game.player1.again) {
-              games[gameString].player0.again = false;
-              games[gameString].player1.again = false;
-              startNewGame(gameString);
-            }
-          }
-        }
-      }
-    });
-  });
+  games[gameString] = new Session(gameString);
   setInterval(deleteGame, 300000, gameString);
   return gameString;
 }
 
-function deleteGame(gameString){
-  if(games[gameString]){
-    if(!(games[gameString].player0.initialized || games[gameString].player1.initialized)){
+function deleteGame(gameString) {
+  if (games[gameString]) {
+    if (games[gameString].members.length == 0) {
       console.log(gameString + ': deleting');
       delete games[gameString];
       delete io.nsps['/' + gameString];
