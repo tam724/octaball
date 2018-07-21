@@ -1,6 +1,6 @@
 "use strict"
 let messages = new Messages();
-const address = 'https://octaball-server-octaball.7e14.starter-us-west-2.openshiftapps.com' // '/'
+const address = 'https://octaball-server-octaball.7e14.starter-us-west-2.openshiftapps.com/' // '/'
 const ROLE_SPECTATOR = 0
 const ROLE_PLAYER = 1
 
