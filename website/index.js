@@ -149,7 +149,6 @@ class MainLayout extends Layout {
     })
   }
 }
-
 // layout connect
 class ConnectLayout extends Layout {
   constructor(lytCtr) {
@@ -274,17 +273,26 @@ class PlayingLayout extends Layout {
 
     this.gameControlsEnabled = false;
 
-    this.gameConnection = new OnlineGameConnection();
-
     //initialize site
+    if(this.gameType == 'online'){
+      this.gameConnection = new OnlineGameConnection();
+      this.pageControls.updateHashFunc(par.gameID);
+      let shareMessage = encodeURI('Do you want to play octaball with me? Click ' + window.location.href);
+      shareMessage = shareMessage.replace('#', '%23');
+      this.aShareWhatsapp.href = 'whatsapp://send?text=' + shareMessage;
+      this.aShareTelegram.href = "tg:msg?text=" + shareMessage;
+      this.aShareMail.href = 'mailto:?subject=Octaball&body=' + shareMessage;
+      this.pageControls.updateStatusFunc('share this link with your friend</br>' + window.location.href);
+    }
+    else if(this.gameType == 'offlineSingle'){
+      this.gameConnection = new OfflineSingleGameConnection();
+      this.aShareWhatsapp.hidden = true;
+      this.aShareTelegram.hidden = true;
+      this.aShareMail.hidden = true;
+    }
+
     this.inputAgain.hidden = true;
-    this.pageControls.updateHashFunc(par.gameID);
-    let shareMessage = encodeURI('Do you want to play octaball with me? Click ' + window.location.href);
-    shareMessage = shareMessage.replace('#', '%23');
-    this.aShareWhatsapp.href = 'whatsapp://send?text=' + shareMessage;
-    this.aShareTelegram.href = "tg:msg?text=" + shareMessage;
-    this.aShareMail.href = 'mailto:?subject=Octaball&body=' + shareMessage;
-    this.pageControls.updateStatusFunc('share this gameID with your friend');
+
     this.pageControls.hideTitleFunc();
     this.onResize();
     this.gameConnection.connectToSession(par.gameID, this.playerInfo, () => this.initialized(), (game) => this.redrawCanvas(game), (resp) => this.shootResponse(resp), (interr) => this.onGameInterrupt(interr), (info) => this.onGameInfo(info));
@@ -334,11 +342,11 @@ class PlayingLayout extends Layout {
       } else if (interrupt.data == 'winner') {
         this.pageControls.updateStatusFunc(interrupt.player.name + ' wins this game, congratulations!');
         this.disableGameControls();
-        this.inputAgain.hidden = false;
-        this.inputAgain.addEventListener('click', () => {
-          this.pageControls.updateStatusFunc("waiting for other player");
-          this.gameConnection.again();
-        })
+        // this.inputAgain.hidden = false; //TODO: enable again (fix bug on server)
+        // this.inputAgain.addEventListener('click', () => {
+        //   this.pageControls.updateStatusFunc("waiting for other player");
+        //   this.gameConnection.again();
+        // })
       }
     }
   }

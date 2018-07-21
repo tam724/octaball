@@ -30,6 +30,7 @@ body {
   height: 37px;
   padding: 10px;
   margin: 5px;
+  margin-top:10px;
   background-color: transparent;
 }
 
@@ -99,6 +100,7 @@ body {
 .logoButton {
   padding: 5px;
   height: 27px;
+  margin-bottom: -13px;
 }
 
 #div_footer {
