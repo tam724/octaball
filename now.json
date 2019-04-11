@@ -1,7 +1,4 @@
 {
     "version": 1,
-    "name": "octaball",
-    "routes": [
-        { "src": "/(.*)", "dest": "server.js" }
-    ]
+    "name": "octaball"
 }
