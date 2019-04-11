@@ -1,6 +1,6 @@
 let express = require('express');
 let app = express();
-let http = require('http').Server(app);
+let http = require('http').createServer(app);
 let io = require('socket.io')(http);
 let Octaball = require('./game/octaball');
 let MsgClass = require('./website/messages.js');
