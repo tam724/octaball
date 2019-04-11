@@ -1,5 +1,5 @@
 {
-    "version": 2,
+    "version": 1,
     "name": "octaball",
     "builds": [
         { "src": "server.js", "use": "@now/node-server" }
